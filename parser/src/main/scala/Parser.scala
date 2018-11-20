@@ -152,6 +152,10 @@ class KaggleParser(val source: String) extends Parser {
       Math.abs(x._1 - y._1) < deltaThreshold && Math.abs(x._2 - y._2) < deltaThreshold
   }
 
+  def isInside(x: (Double, Double)) : Boolean = {
+    x._2 >= 41.100542 && x._2 <= 41.249139 && x._1 >= -8.7222031 && x._1 <= -8.529393
+  }
+
   override def parse(filepath: String) : Unit = {
     import java.io.PrintWriter
     new PrintWriter(filepath) {
@@ -176,10 +180,15 @@ class KaggleParser(val source: String) extends Parser {
             }
           }
           write(pos.filter( (x:(Double, Double)) => {
-            val toReturn = isClose(prevPos, x)
-            if(toReturn)
-              prevPos = x
-            toReturn
+            if (isInside(x)) {
+              val toReturn = isClose(prevPos, x)
+              if(toReturn)
+                prevPos = x
+              toReturn
+            } else {
+              prevPos = (-1000,-1000)
+              false
+            }
           }).mkString(" "))
           write("\n")
         }
