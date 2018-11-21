@@ -7,7 +7,7 @@ object Axis extends Enumeration {
   val LATITUDE, LONGITUDE = Value
 }
 
-class KDTree(filepath: String, minimumSupport: Int) {
+class KDTree(filepath: String) {
   import Axis._
 
   class KDTreeNode(val lowLat: Double, val highLat: Double, lowLong: Double, highLong: Double, axis: Axis) {
@@ -24,20 +24,16 @@ class KDTree(filepath: String, minimumSupport: Int) {
     }
 
     def splitLatitude() : Option[(KDTreeNode, KDTreeNode)] = {
-      val midLat = lowLat + (highLat - lowLat)/2.0
-      if (g.shouldSplitOnLat(lowLat, highLat, lowLong, highLong)) {
-        Some((new KDTreeNode(lowLat, midLat, lowLong, highLong, LONGITUDE), new KDTreeNode(midLat, highLat, lowLong, highLong, LONGITUDE)))
-      } else {
-        None
+      g.splitOnLat(lowLat, highLat, lowLong, highLong) match {
+        case Some(midLat) => Some((new KDTreeNode(lowLat, midLat, lowLong, highLong, LONGITUDE), new KDTreeNode(midLat, highLat, lowLong, highLong, LONGITUDE)))
+        case None => None
       }
     }
 
     def splitLongitude() : Option[(KDTreeNode, KDTreeNode)] = {
-      val midLong = lowLong + (highLong - lowLong)/2.0
-      if (g.shouldSplitOnLong(lowLat, highLat, lowLong, highLong)) {
-        Some((new KDTreeNode(lowLat, highLat, lowLong, midLong, LATITUDE), new KDTreeNode(lowLat, highLat, midLong, highLong, LATITUDE)))
-      } else {
-        None
+      g.splitOnLong(lowLat, highLat, lowLong, highLong) match {
+        case Some(midLong) => Some((new KDTreeNode(lowLat, highLat, lowLong, midLong, LATITUDE), new KDTreeNode(lowLat, highLat, midLong, highLong, LATITUDE)))
+        case None => None
       }
     }
 
@@ -50,7 +46,7 @@ class KDTree(filepath: String, minimumSupport: Int) {
   }
 
   val (minLat, maxLat, minLong, maxLong) = (41.100542, 41.249139, -8.7222031, -8.529393)
-  val g = new Graph(20, 20, minLat, maxLat, minLong, maxLong)
+  val g = new Graph(200, 200, minLat, maxLat, minLong, maxLong)
   g.processFile(filepath)
 
   val root = new KDTreeNode(minLat, maxLat, minLong, maxLong, LATITUDE)
@@ -68,5 +64,5 @@ class KDTree(filepath: String, minimumSupport: Int) {
 }
 
 object KDTree {
-  def apply(filepath: String) = new KDTree(filepath, 2000)
+  def apply(filepath: String) = new KDTree(filepath)
 }

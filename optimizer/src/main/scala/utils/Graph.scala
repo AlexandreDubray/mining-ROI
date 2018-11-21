@@ -9,6 +9,8 @@ class Graph(val width: Int,val height: Int, val minLat: Double, val maxLat: Doub
   val ratioLat = deltaLat / height
   val ratioLong = deltaLong / width
   
+  val closenessThreshold = 0.0001
+
   val flux = Array.fill[Int](n,n)(0)
   val inFlux = Array.fill[Int](n)(0)
   var nTrajectories = 0
@@ -79,23 +81,73 @@ class Graph(val width: Int,val height: Int, val minLat: Double, val maxLat: Doub
     f
   }
 
-  def shouldSplitOnLat(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Boolean = {
-    val midLat = lowLat + (highLat - lowLat)/2.0
-    val minRow = getRow(lowLat)
-    val midRow = getRow(midLat)
-    val maxRow = getRow(highLat)
+  def ternaryLat(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Double = {
     val minCol = getCol(lowLong)
     val maxCol = getCol(highLong)
-    fluxInsideRegion(minCol, maxCol, minRow, midRow) >= minimumSupport && fluxInsideRegion(minCol, maxCol, midRow + 1, maxRow) >= minimumSupport
+    val minRow = getRow(lowLat)
+    val maxRow = getRow(highLat)
+
+    val l1 = lowLat + (highLat - lowLat)/3.0
+    val l2 = lowLat + (2.0*(highLat - lowLat))/3.0
+    if (getRow(l1) == getRow(l2) || Math.abs(l1-l2) < closenessThreshold) {
+      l1
+    } else {
+      val f1 = fluxInsideRegion(minCol, maxCol, minRow, getRow(l1))
+      val f2 = fluxInsideRegion(minCol, maxCol, minRow, getRow(l2))
+      if (f1 < f2) {
+        ternaryLat(l1, highLat, lowLong, highLong)
+      } else if (f1 > f2) {
+        ternaryLat(lowLat, l2, lowLong, highLong)
+      } else {
+        ternaryLat(l1, l2, lowLong, highLong)
+      }
+    }
   }
 
-  def shouldSplitOnLong(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Boolean = {
-    val midLong = lowLong + (highLong - lowLong)/2.0
+  def splitOnLat(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Option[Double] = {
     val minRow = getRow(lowLat)
     val maxRow = getRow(highLat)
     val minCol = getCol(lowLong)
-    val midCol = getCol(midLong)
     val maxCol = getCol(highLong)
-    fluxInsideRegion(minCol, midCol, minRow, maxRow) >= minimumSupport && fluxInsideRegion(midCol+1, maxCol, minRow, maxRow) >= minimumSupport
+    if (getRow(lowLat) == getRow(highLat) || Math.abs(lowLat - highLat) < closenessThreshold || fluxInsideRegion(minCol, maxCol, minRow, maxRow) < minimumSupport) {
+      None
+    } else {
+      Some(ternaryLat(lowLat, highLat, lowLong, highLong))
+    }
+  }
+
+  def ternaryLong(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Double = {
+    val minCol = getCol(lowLong)
+    val maxCol = getCol(highLong)
+    val minRow = getRow(lowLat)
+    val maxRow = getRow(highLat)
+
+    val l1 = lowLong + (highLong - lowLong)/3.0
+    val l2 = lowLong + (2.0*(highLong - lowLong))/3.0
+    if (getCol(l1) == getCol(l2) || Math.abs(l1 - l2) < closenessThreshold) {
+      l1
+    } else {
+      val f1 = fluxInsideRegion(minCol, getCol(l1), minRow, maxRow)
+      val f2 = fluxInsideRegion(minCol, getCol(l2), minRow, maxRow)
+      if (f1 < f2) {
+        ternaryLong(minLat, highLat, l1, highLong)
+      } else if (f1 > f2) {
+        ternaryLong(minLat, highLat, lowLong, l2)
+      } else {
+        ternaryLong(minLat, highLat, l1, l2)
+      }
+    }
+  }
+
+  def splitOnLong(lowLat: Double, highLat: Double, lowLong: Double, highLong: Double) : Option[Double] = {
+    val minRow = getRow(lowLat)
+    val maxRow = getRow(highLat)
+    val minCol = getCol(lowLong)
+    val maxCol = getCol(highLong)
+    if (getCol(lowLong) == getCol(highLong) || Math.abs(lowLong - highLong) < closenessThreshold || fluxInsideRegion(minCol, maxCol, minRow, maxRow) < minimumSupport) {
+      None
+    } else {
+      Some(ternaryLong(lowLat, highLat, lowLong, highLong))
+    }
   }
 }
