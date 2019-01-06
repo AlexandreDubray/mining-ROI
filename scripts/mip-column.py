@@ -5,6 +5,8 @@ from gurobipy import *
 import sys
 import os
 
+SCRIPT_DIR = os.getcwd()
+
 def print_flush(message):
     print(message)
     sys.stdout.flush()
@@ -34,7 +36,7 @@ def prepare_data():
     global data, constraint_matrix
 
     print_flush("Parsing data")
-    input_file = './mip-matrix.tsv'
+    input_file = os.path.join(SCRIPT_DIR, '..', 'data', 'mip-matrix.tsv')
     with open(input_file, 'r') as f:
         data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
         maxCol = -1
@@ -59,9 +61,18 @@ def create_rectangles():
     global data, constraint_matrix, rectangles
     print_flush("Creating rectangles")
     rectangles = {}
-    if not os.path.isfile('./rectangles.in'):
+    rectangles_path = os.path.join(SCRIPT_DIR, '..', 'data', 'mip-rectangles.in')
+    try:
+        with open(rectangles_path, 'r') as f:
+            for line in f.readlines():
+                [rid, xmin, xmax, ymin, ymax, w] = [int(x) for x in line.split(" ")]
+                rectangles[rid] = ((xmin, xmax, ymin, ymax), w)
+                for col in range(xmin, xmax+1):
+                    for row in range(ymin, ymax+1):
+                        constraint_matrix[row][col].append(rid)
+    except FileNotFoundError:
         next_id = 0
-        with open("rectangles.in", "w") as f:
+        with open(rectangles_path, "w") as f:
             for rowInf in range(len(data)):
                 for rowSup in range(rowInf, len(data)):
                     for colInf in range(len(data[0])):
@@ -72,14 +83,6 @@ def create_rectangles():
                                 f.write("{} {} {} {} {} {}\n".format(next_id, colInf, colSup, rowInf, rowSup, w))
                                 rectangles[next_id] = ((colInf, colSup, rowInf, rowSup), w)
                                 next_id += 1
-    else:
-        with open("rectangles.in", "r") as f:
-            for line in f.readlines():
-                [rid, xmin, xmax, ymin, ymax, w] = [int(x) for x in line.split(" ")]
-                rectangles[rid] = ((xmin, xmax, ymin, ymax), w)
-                for col in range(xmin, xmax+1):
-                    for row in range(ymin, ymax+1):
-                        constraint_matrix[row][col].append(rid)
 
 def compute_sol(K):
     if data is None:
@@ -114,12 +117,13 @@ def compute_sol(K):
 
     m.optimize()
 
-    with open("mip-sol.out", "a") as f:
+    with open(os.path.join(SCRIPT_DIR, '..', 'data','mip-sol.out'), "a") as f:
         f.write("{} {}\n".format(K, m.objVal))
         for k in rect_idx:
             if rects[k].X == 1:
                 r = rectangles[k]
                 f.write("{} {} {} {}\n".format(r[0][0], r[0][1], r[0][2], r[0][3]))
+        f.write("\n")
 
 
 for k in range(1, 30):

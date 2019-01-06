@@ -4,7 +4,7 @@
 import sys
 import os
 
-from Constant import *
+from Utils import *
 
 SCRIPT_DIR = os.getcwd()
 

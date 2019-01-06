@@ -1,4 +1,7 @@
 import sys
+import os
+
+SCRIPT_DIR = os.getcwd()
 
 data_file = '../data/mip-matrix.tsv'
 N = 0
@@ -24,7 +27,8 @@ def main():
     for i,d in enumerate(data):
         data[i] = d[minX:maxX+1]
 
-    with open("./mip-sol.out", 'r') as f:
+    mip_file = os.path.join(SCRIPT_DIR, '..', 'data', 'mip-sol.out')
+    with open(mip_file, 'r') as f:
         bestK = None
         bestError = None
         bestLength = sys.maxsize
@@ -56,7 +60,8 @@ def main():
                 bestError = total_error_encode
                 bestLength = bestK + bestError
                 rects = [x for x in re]
-        with open(SCRIPT_DIR, '..', 'output', 'mip.out'), 'w') as f:
+        print(rects)
+        with open(os.path.join(SCRIPT_DIR, '..', 'output', 'mip.out'), 'w') as f:
             for rect in rects:
                 f.write('{}\n'.format(' '.join([str(x) for x in rect])))
 
