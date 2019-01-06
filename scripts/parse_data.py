@@ -48,8 +48,10 @@ def write_baseline_matrix():
     with open(os.path.join(SCRIPT_DIR, '..', 'data', 'baseline-matrix.tsv'), 'w') as f:
         f.write('{}\n'.format('\t'.join([str(x) for x in inFlux])))
 
-if __name__ == '__main__':
-    data_file = sys.argv[1]
+def main(data_file):
     parse_file(data_file)
     write_mip_matrix()
     write_baseline_matrix()
+
+if __name__ == '__main__':
+    main(sys.argv[1])
