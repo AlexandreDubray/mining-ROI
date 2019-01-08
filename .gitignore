@@ -1,2 +1,8 @@
 .git/
 target/
+
+*.pyc
+data/
+output/
+__pycache__/
+webapp/
