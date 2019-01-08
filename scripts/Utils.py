@@ -22,7 +22,9 @@ delta_longitude = max_longitude - min_longitude
 ratio_longitude = delta_longitude/side_size
 
 ntrajectories = 1674151
-threshold = 0.05*ntrajectories
+threshold = 0.15*ntrajectories
+
+data_file = os.path.join(SCRIPT_DIR, '..', 'data', 'parsed', 'KaggleTaxis.in')
 
 import parse_data
 
