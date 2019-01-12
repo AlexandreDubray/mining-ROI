@@ -13,6 +13,7 @@ import shared.Constant
     
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 data_directory = os.path.join(SCRIPT_DIR, '..', 'data')
+output_directory = os.path.join(data_directory, 'output')
 webapp_directory = os.path.join(SCRIPT_DIR, '..', 'webapp')
 
 def safe_mkdir(path):
@@ -24,6 +25,7 @@ def safe_mkdir(path):
 def create_env():
     """ Create the necessary folder in order to run the code """
     safe_mkdir(data_directory)
+    safe_mkdir(output_directory)
     safe_mkdir(webapp_directory)
 
 def clean():
