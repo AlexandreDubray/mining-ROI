@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from visualization.visu_map import visu_baseline, visu_mip, visu_initial
+from visualization.visu_map import visu_baseline, visu_mip, visu_initial, visu_mip_vs_baseline
 
 def main():
     # Run the baseline algorithm and the visualization of the results

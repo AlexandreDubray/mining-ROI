@@ -63,15 +63,17 @@ def get_initial_matrix():
 
 # Utilities for the webapp
 def map_rectangles_to_pos(minRow, maxRow, minCol, maxCol):
-    """ /!\ minRow give the higher latitude /!\ """
+    # minRow -> lower latitude
+    # minCol -> lower longitude
     minLat = min_latitude + minRow*ratio_latitude
     maxLat = min_latitude + (maxRow+1)*ratio_latitude
     maxLong = min_longitude + minCol*ratio_longitude
     minLong = min_longitude +(maxCol+1)*ratio_longitude
     return (minLat, maxLat, minLong, maxLong)
 
+import mip.Utils as mipUtils
 def get_mip_shift():
-    with get_mip_matrix_file() as f:
+    with mipUtils.get_mip_matrix_file() as f:
         data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
         maxCol = -1
         minCol = sys.maxsize

@@ -1,34 +1,36 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 
-SCRIPT_DIR = os.getcwd()
+from mip import Utils
 
-data_file = '../data/mip-matrix.tsv'
-N = 0
-
-def main():
-    global N
-    with open(data_file, 'r') as f:
+def run_mdl():
+    N = 0
+    with Utils.get_mip_matrix_file() as f:
         data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
         maxX = -1
         minX = sys.maxsize
         maxY = -1
         minY = sys.maxsize
-        for i in range(len(data)):
-            for j in range(len(data)):
-                if data[i][j] == 1:
-                    maxX = max(maxX,j)
-                    minX = min(minX,j)
-                    maxY = max(maxY,i)
-                    minY = min(minY,i)
+        for row in range(len(data)):
+            for col in range(len(data[row])):
+                if data[row][col] == 1:
+                    maxX = max(maxX,col)
+                    minX = min(minX,col)
+                    maxY = max(maxY,row)
+                    minY = min(minY,row)
                     N += 1
 
     data = data[minY:maxY+1]
     for i,d in enumerate(data):
         data[i] = d[minX:maxX+1]
 
-    mip_file = os.path.join(SCRIPT_DIR, '..', 'data', 'mip-sol.out')
-    with open(mip_file, 'r') as f:
+    #for r in range(len(data)-1, -1, -1):
+    #    print(' '.join([str(x) for x in data[r]]))
+    
+    with open(Utils.mip_gurobi_output_file, 'r') as f:
         bestK = None
         bestError = None
         bestLength = sys.maxsize
@@ -60,10 +62,8 @@ def main():
                 bestError = total_error_encode
                 bestLength = bestK + bestError
                 rects = [x for x in re]
-        print(rects)
-        with open(os.path.join(SCRIPT_DIR, '..', 'output', 'mip.out'), 'w') as f:
+        
+        with open(Utils.mip_output_file, 'w') as f:
             for rect in rects:
                 f.write('{}\n'.format(' '.join([str(x) for x in rect])))
 
-if __name__ == '__main__':
-    main()

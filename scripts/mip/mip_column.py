@@ -6,13 +6,15 @@ import sys
 import os
 
 from mip import Utils
+from shared.Utils import print_flush
 
 data = None
 constraint_matrix = None
 rectangles = None
+number_supported = 0
 
 def prepare_data():
-    global data, constraint_matrix
+    global data, constraint_matrix, number_supported
     with Utils.get_mip_matrix_file() as f:
         data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
         maxCol = -1
@@ -26,15 +28,20 @@ def prepare_data():
                     minCol = min(minCol,col)
                     maxRow = max(maxRow,row)
                     minRow = min(minRow,row)
+                    number_supported += 1
         data = data[minRow:maxRow+1]
         # Reducing grid to strict minimum
         for i,d in enumerate(data):
             data[i] = d[minCol:maxCol+1]
 
+    #for r in range(len(data)-1, -1, -1):
+    #    print(' '.join([str(x) for x in data[r]]))
+
     constraint_matrix = [[set() for col in range(len(data[0]))] for row in range(len(data))]
 
 def weight(xmin, xmax, ymin, ymax, rect_id):
     global data, constraint_matrix
+    # Uncomment for more balanced area
     if xmax - xmin + 1 > 2*(ymax-ymin+1) or ymax-ymin+1 > 2*(xmax - xmin+1):
         return None
     active = 0
@@ -74,12 +81,6 @@ def create_rectangles():
                             next_id += 1
 
 def compute_sol(K):
-    if data is None:
-        prepare_data()
-
-    if rectangles is None:
-        parse_rectangles()
-
     m = Model("columns-gen-model")
 
     rect_idx = range(len(rectangles))
@@ -106,14 +107,17 @@ def compute_sol(K):
 
     m.optimize()
     
-    with open(os.path.join(SCRIPT_DIR, '..', 'data','mip-sol.out'), "a") as f:
+    with open(Utils.mip_gurobi_output_file, "a") as f:
         f.write("{} {}\n".format(K, m.objVal))
         for k in rect_idx:
             if rects[k].X == 1:
                 curr_rect = rectangles[k]
+                # colMin colMax rowMin rowMax
                 f.write("{} {} {} {}\n".format(curr_rect[0][0], curr_rect[0][1], curr_rect[0][2], curr_rect[0][3]))
         f.write("\n")
 
 def run():
-    for k in range(1,):
+    prepare_data()
+    parse_rectangles()
+    for k in range(1,number_supported+1):
         compute_sol(k)
