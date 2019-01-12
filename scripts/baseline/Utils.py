@@ -12,13 +12,14 @@ def get_data_directory():
     return os.path.join(SCRIPT_DIR, '..', '..', 'data')
 
 baseline_output_file = os.path.join(get_data_directory(), 'output', 'baseline.out')
+baseline_matrix_file = os.path.join(get_data_directory(), 'baseline-matrix.tsv')
 
 def get_matrix_file():
     try:
-        return open(os.path.join(get_data_directory(), 'baseline-matrix.tsv'), 'r')
+        return open(baseline_matrix_file, 'r')
     except FileNotFoundError:
         write_baseline_matrix()
-        return open(os.path.join(get_data_directory(), 'baseline-matrix.tsv'), 'r')
+        return open(baseline_matrix_file, 'r')
 
 
 def get_output_file():
@@ -33,5 +34,8 @@ def get_output_file():
 
 def write_baseline_matrix():
     influx = get_inFlux()
-    with open(os.path.join(get_data_directory(), 'baseline-matrix.tsv'), 'w') as f:
+    with open(baseline_matrix_file, 'w') as f:
         f.write('{}\n'.format('\t'.join([str(x) for x in get_inFlux()])))
+
+def get_baseline_output_filenames():
+    return [baseline_output_file, baseline_matrix_file]

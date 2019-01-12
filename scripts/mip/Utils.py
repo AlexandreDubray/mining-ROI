@@ -15,16 +15,17 @@ def get_data_directory():
 mip_output_file = os.path.join(get_data_directory(), 'output', 'mip.out')
 mip_gurobi_output_file = os.path.join(get_data_directory(), 'gurobi.out')
 mip_rectangles_file = os.path.join(get_data_directory(), 'mip-rectangles.in')
+mip_matrix_file = os.path.join(get_data_directory(), 'mip-matrix.tsv')
 
 from mip import mip_column
 from mip import select_best
 
 def get_mip_matrix_file():
     try:
-        return open(os.path.join(get_data_directory(), 'mip-matrix.tsv'), 'r')
+        return open(mip_matrix_file, 'r')
     except FileNotFoundError:
         write_mip_matrix()
-        return open(os.path.join(get_data_directory(), 'mip-matrix.tsv'), 'r')
+        return open(mip_matrix_file, 'r')
 
 def get_mip_rectangles_file():
     try:
@@ -48,3 +49,6 @@ def write_mip_matrix():
         for row in range(len(mip_matrix)):
             f.write('{}\n'.format('\t'.join([str(x) for x in mip_matrix[row]])))
 
+
+def get_mip_output_filenames():
+    return [mip_output_file, mip_gurobi_output_file, mip_rectangles_file, mip_matrix_file]
