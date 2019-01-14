@@ -10,7 +10,9 @@ from mip.Utils import get_mip_output_filenames
 from baseline.Utils import get_baseline_output_filenames
 
 import shared.Constant
-    
+
+from results_analysis import run_analysis
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 data_directory = os.path.join(SCRIPT_DIR, '..', 'data')
 output_directory = os.path.join(data_directory, 'output')
@@ -44,14 +46,7 @@ def clean():
             pass
 
 def main():
-    # Run the baseline algorithm and the visualization of the results
-    #
-    # Mip should not be runned by default since it needs an academic
-    # connection to run gurobi
-    visu_initial()
-    visu_baseline()
-    visu_mip()
-    visu_mip_vs_baseline()
+    run_analysis()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Find ROI using MIP and baseline approach')
