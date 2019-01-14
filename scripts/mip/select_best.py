@@ -6,29 +6,28 @@ import os
 
 from mip import Utils
 
+def count_dense_nondense(xmin, xmax, ymin, ymax, data):
+    dense = 0
+    undense = 0
+    for row in range(ymin, ymax+1):
+        for col in range(xmin, xmax+1):
+            if data[row][col] == 1:
+                dense += 1
+            else:
+                undense += 1
+    return (dense, undense)
+
+def total_error_rectangles(rectangles, data, N):
+    total_dense_covered = 0
+    total_nondense_covered = 0
+    for xmin, xmax, ymin, ymax in rectangles:
+        (d,nd) = count_dense_nondense(xmin,xmax,ymin,ymax, data)
+        total_dense_covered += d
+        total_nondense_covered += nd
+    return (N - total_dense_covered) + total_nondense_covered
+
 def run_mdl():
-    N = 0
-    with Utils.get_mip_matrix_file() as f:
-        data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
-        maxX = -1
-        minX = sys.maxsize
-        maxY = -1
-        minY = sys.maxsize
-        for row in range(len(data)):
-            for col in range(len(data[row])):
-                if data[row][col] == 1:
-                    maxX = max(maxX,col)
-                    minX = min(minX,col)
-                    maxY = max(maxY,row)
-                    minY = min(minY,row)
-                    N += 1
-
-    data = data[minY:maxY+1]
-    for i,d in enumerate(data):
-        data[i] = d[minX:maxX+1]
-
-    #for r in range(len(data)-1, -1, -1):
-    #    print(' '.join([str(x) for x in data[r]]))
+    (data, N) = Utils.get_initial_mip_data()
     
     with open(Utils.mip_gurobi_output_file, 'r') as f:
         bestK = None
@@ -47,14 +46,8 @@ def run_mdl():
             rss = [x.split(' ') for x in rs]
             re = [ (int(x), int(y), int(z), int(t)) for x,y,z,t in rss]
 
-            for xmin, xmax, ymin, ymax in re:
-                for col in range(xmin, xmax+1):
-                    for row in range(ymin, ymax+1):
-                        if data[row][col] == 1:
-                            covered += 1
-                        else:
-                            errored += 1
-            total_error_encode = (N - covered) + errored
+            total_error_encode = total_error_rectangles(re, data, N)
+
             split = first.split(' ')
             K = int(split[0])
             if K + total_error_encode < bestLength:

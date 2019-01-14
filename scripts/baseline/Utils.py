@@ -3,13 +3,14 @@
 
 import os
 from shared.Utils import print_flush, get_inFlux
+from shared.Constant import percentage_threshold
 
 from baseline import Greedy
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def get_data_directory():
-    return os.path.join(SCRIPT_DIR, '..', '..', 'data')
+    return os.path.join(SCRIPT_DIR, '..', '..', 'data', str(percentage_threshold))
 
 baseline_output_file = os.path.join(get_data_directory(), 'output', 'baseline.out')
 baseline_matrix_file = os.path.join(get_data_directory(), 'baseline-matrix.tsv')
