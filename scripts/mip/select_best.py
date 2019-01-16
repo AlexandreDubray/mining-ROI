@@ -3,6 +3,7 @@
 
 import sys
 import os
+import math
 
 from mip import Utils
 
@@ -30,8 +31,6 @@ def run_mdl():
     (data, N) = Utils.get_initial_mip_data()
     
     with open(Utils.mip_gurobi_output_file, 'r') as f:
-        bestK = None
-        bestError = None
         bestLength = sys.maxsize
         rects = None
         for out in f.read().split('\n\n')[:-1]:
@@ -50,10 +49,9 @@ def run_mdl():
 
             split = first.split(' ')
             K = int(split[0])
-            if K + total_error_encode < bestLength:
-                bestK = K
-                bestError = total_error_encode
-                bestLength = bestK + bestError
+            length = K*math.log(4) + math.log(2)*total_error_encode
+            if length < bestLength:
+                bestLength = length 
                 rects = [x for x in re]
         
         with open(Utils.mip_output_file, 'w') as f:
