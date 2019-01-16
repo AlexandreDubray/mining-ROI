@@ -29,7 +29,7 @@ def total_error_rectangles(rectangles, data, N):
 def run_mdl():
     (data, N) = Utils.get_initial_mip_data()
     
-    with open(Utils.mip_gurobi_output_file, 'r') as f:
+    with Utils.get_gurobi_output_file() as f:
         bestK = None
         bestError = None
         bestLength = sys.maxsize
@@ -56,7 +56,7 @@ def run_mdl():
                 bestLength = bestK + bestError
                 rects = [x for x in re]
         
-        with open(Utils.mip_output_file, 'w') as f:
+        with open(Utils.mip_output_file(), 'w') as f:
             for rect in rects:
                 f.write('{}\n'.format(' '.join([str(x) for x in rect])))
 
