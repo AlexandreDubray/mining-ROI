@@ -3,7 +3,6 @@
 
 import sys
 import os
-import math
 
 from mip import Utils
 
@@ -49,7 +48,7 @@ def run_mdl():
 
             split = first.split(' ')
             K = int(split[0])
-            length = K*math.log(4) + math.log(2)*total_error_encode
+            length = K + total_error_encode
             if length < bestLength:
                 bestLength = length 
                 rects = [x for x in re]
