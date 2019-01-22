@@ -6,54 +6,50 @@ import os
 
 from mip import Utils
 
-def count_dense_nondense(xmin, xmax, ymin, ymax, data):
-    dense = 0
-    undense = 0
-    for row in range(ymin, ymax+1):
-        for col in range(xmin, xmax+1):
-            if data[row][col] == 1:
-                dense += 1
-            else:
-                undense += 1
-    return (dense, undense)
-
-def total_error_rectangles(rectangles, data, N):
-    total_dense_covered = 0
-    total_nondense_covered = 0
-    for xmin, xmax, ymin, ymax in rectangles:
-        (d,nd) = count_dense_nondense(xmin,xmax,ymin,ymax, data)
-        total_dense_covered += d
-        total_nondense_covered += nd
-    return (N - total_dense_covered) + total_nondense_covered
-
 def run_mdl():
-    (data, N) = Utils.get_initial_mip_data()
+    (_, N) = Utils.get_initial_mip_data()
     
     with Utils.get_gurobi_output_file() as f:
         bestLength = sys.maxsize
         rects = None
+        circles = None
         for out in f.read().split('\n\n')[:-1]:
 
             covered = 0
             errored = 0
 
             s = out.split('\n')
-            first = s[0]
+            K = int(s[0].split(' ')[0])
 
-            rs = s[1:]
-            rss = [x.split(' ') for x in rs]
-            re = [ (int(x), int(y), int(z), int(t)) for x,y,z,t in rss]
+            curr_rect = list()
+            curr_circ = list()
 
-            total_error_encode = total_error_rectangles(re, data, N)
+            for i in range(1, len(s)):
+                roi = s[i].split(' ')
+                if roi[0] == 'rectangle':
+                    (x,y,z,t, dense, nondense) = [int(x) for x in roi[1:]]
+                    covered += dense
+                    errored += nondense
+                    curr_rect.append((x,y,z,t))
+                elif roi[0] == 'circle':
+                    (row, col, radius, dense, nondense) = [int(x) for x in roi[1:]]
+                    covered += dense
+                    errored += nondense
+                    curr_circ.append((row, col, radius))
+                else:
+                    print("Unknown roi type {}".format(roi[0]))
+                    sys.exit(1)
 
-            split = first.split(' ')
-            K = int(split[0])
-            length = K + total_error_encode
+            total_error_encode = (N - covered) + errored
+            length = len(curr_rect)*4 + len(curr_circ)*3 + total_error_encode*2
             if length < bestLength:
                 bestLength = length 
-                rects = [x for x in re]
+                rects = [x for x in curr_rect]
+                circles = [x for x in curr_circ]
         
         with open(Utils.mip_output_file(), 'w') as f:
             for rect in rects:
-                f.write('{}\n'.format(' '.join([str(x) for x in rect])))
+                f.write('rectangle {}\n'.format(' '.join([str(x) for x in rect])))
+            for circle in circles:
+                f.write('circle {}\n'.format(' '.join([str(x) for x in circle])))
 

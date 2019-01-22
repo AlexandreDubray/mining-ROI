@@ -71,6 +71,67 @@ def map_rectangles_to_pos(minRow, maxRow, minCol, maxCol):
     minLong = min_longitude +(maxCol+1)*ratio_longitude
     return (minLat, maxLat, minLong, maxLong)
 
+def map_cell_to_lat_long(row, col):
+    return map_rectangles_to_pos(row, row, col, col)
+
+def map_circle_to_pos(row, col, radius):
+    lgn_lat = list()
+    (upLat1, upLat2, upLong1, upLong2) = map_rectangles_to_pos(row+radius+1, row+radius+1, col, col)
+    # Adding top cell border
+    lgn_lat.append((upLat1, upLong2))
+    lgn_lat.append((upLat1, upLong1))
+
+    # from up to right
+    current_pos = (upLat1, upLong1)
+    for _ in range(radius):
+        # go one below, then one right
+        next_pos = (current_pos[0] - ratio_latitude, current_pos[1])
+        lgn_lat.append(next_pos)
+        next_pos = (next_pos[0], next_pos[1]+ratio_longitude)
+        lgn_lat.append(next_pos)
+        current_pos = next_pos
+
+    #adding right border
+    current_pos = (current_pos[0] - ratio_latitude, current_pos[1])
+    lgn_lat.append(current_pos)
+
+    #from right to bottom
+    for _ in range(radius):
+        #go one left then one bottom
+        next_pos = (current_pos[0], current_pos[1] - ratio_longitude)
+        lgn_lat.append(next_pos)
+        next_pos = (next_pos[0] - ratio_latitude, next_pos[1])
+        lgn_lat.append(next_pos)
+        current_pos = next_pos
+
+    # addign bottom border
+    current_pos = (current_pos[0], current_pos[1] - ratio_longitude)
+    lgn_lat.append(current_pos)
+    
+    #from bottom to left
+    for _ in range(radius):
+        # go one up then one left
+        next_pos = (current_pos[0] + ratio_latitude, current_pos[1])
+        lgn_lat.append(next_pos)
+        next_pos = (next_pos[0], next_pos[1] - ratio_longitude)
+        lgn_lat.append(next_pos)
+        current_pos = next_pos
+
+    # left border
+    current_pos = (current_pos[0] + ratio_latitude, current_pos[1])
+    lgn_lat.append(current_pos)
+    
+    # left to up
+    for _ in range(radius):
+        # one right then one up
+        next_pos = (current_pos[0], current_pos[1]+ratio_longitude)
+        lgn_lat.append(next_pos)
+        next_pos = (next_pos[0] + ratio_latitude, next_pos[1])
+        lgn_lat.append(next_pos)
+        current_pos = next_pos
+
+    return lgn_lat
+
 import mip.Utils as mipUtils
 def get_mip_shift():
     with mipUtils.get_mip_matrix_file() as f:

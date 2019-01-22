@@ -17,5 +17,14 @@ delta_longitude = max_longitude - min_longitude
 ratio_longitude = delta_longitude/side_size
 
 ntrajectories = 1674151
-percentage_threshold = 15
-threshold = float(percentage_threshold/100)*ntrajectories
+percentage_threshold = 5
+
+def get_percentage_threshold():
+    return percentage_threshold
+
+def set_percentage_threshold(tr):
+    global percentage_threshold
+    percentage_threshold = tr
+
+def threshold():
+    return float(get_percentage_threshold()/100)*ntrajectories

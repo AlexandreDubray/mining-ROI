@@ -26,11 +26,11 @@ def extend_left(minRow, maxRow, minCol, maxCol, meanDensity, used, data):
     for row in range(minRow, maxRow + 1):
         if used[row][minCol-1]:
             return None
-        if data[row][minCol-1] >= Constant.threshold:
+        if data[row][minCol-1] >= Constant.threshold():
             extension_contains_dense = True
         extension_density += data[row][minCol-1]
     new_mean_density = (extension_density +  current_density) / area(minRow, maxRow, minCol-1, maxCol)  
-    if new_mean_density < Constant.threshold or not extension_contains_dense:
+    if new_mean_density < Constant.threshold() or not extension_contains_dense:
         return None
     return (minRow, maxRow, minCol-1, maxCol, new_mean_density)
 
@@ -43,11 +43,11 @@ def extend_right(minRow, maxRow, minCol, maxCol, meanDensity, used, data):
     for row in range(minRow, maxRow + 1):
         if used[row][maxCol+1]:
             return None
-        if data[row][maxCol+1] >= Constant.threshold:
+        if data[row][maxCol+1] >= Constant.threshold():
             extension_contains_dense = True
         extension_density += data[row][maxCol+1]
     new_mean_density = (extension_density +  current_density) / area(minRow, maxRow, minCol, maxCol+1)  
-    if new_mean_density < Constant.threshold or not extension_contains_dense:
+    if new_mean_density < Constant.threshold() or not extension_contains_dense:
         return None
     return (minRow, maxRow, minCol, maxCol+1, new_mean_density)
 
@@ -60,12 +60,12 @@ def extend_up(minRow, maxRow, minCol, maxCol, mean_density, used, data):
     for col in range(minCol, maxCol+1):
         if used[minRow-1][col]:
             return None
-        if data[minRow-1][col] >= Constant.threshold:
+        if data[minRow-1][col] >= Constant.threshold():
             extension_contains_dense = True
         extension_density += data[minRow-1][col]
 
     new_mean_density = (extension_density + current_density) / area(minRow-1, maxRow, minCol, maxCol)
-    if new_mean_density < Constant.threshold or not extension_contains_dense:
+    if new_mean_density < Constant.threshold() or not extension_contains_dense:
         return None
     return (minRow-1, maxRow, minCol, maxCol, new_mean_density)
 
@@ -78,12 +78,12 @@ def extend_down(minRow, maxRow, minCol, maxCol, mean_density, used, data):
     for col in range(minCol, maxCol+1):
         if used[maxRow + 1][col]:
             return None
-        if data[maxRow + 1][col] >= Constant.threshold:
+        if data[maxRow + 1][col] >= Constant.threshold():
             extension_contains_dense = True
         extension_density += data[maxRow+1][col]
 
     new_mean_density = (extension_density + current_density) / area(minRow, maxRow+1, minCol, maxCol)
-    if new_mean_density < Constant.threshold or not extension_contains_dense:
+    if new_mean_density < Constant.threshold() or not extension_contains_dense:
         return None
     return (minRow, maxRow+1, minCol, maxCol, new_mean_density)
 
@@ -93,7 +93,7 @@ def find_roi(threshold):
     dense_cell = list()
     for row in range(Constant.side_size):
         for col in range(Constant.side_size):
-            if data[row][col] >= Constant.threshold:
+            if data[row][col] >= Constant.threshold():
                 dense_cell.append((data[row][col],row, col))
     dense_cell = sorted(dense_cell, reverse=True)
 
@@ -149,8 +149,8 @@ def find_roi(threshold):
     return rois
 
 def run():
-    rois = find_roi(Constant.threshold)
-    with open(Utils.baseline_output_file, 'w') as f:
+    rois = find_roi(Constant.threshold())
+    with open(Utils.baseline_output_file(), 'w') as f:
         for roi in rois:
             f.write('{}\n'.format(' '.join([str(x) for x in roi])))
 
