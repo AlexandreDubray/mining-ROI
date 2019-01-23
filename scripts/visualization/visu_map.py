@@ -30,6 +30,13 @@ def add_rectangles_to_map(minRow, maxRow, minCol, maxCol, m, color, fop):
             fill_opacity=fop
             ).add_to(m)
 
+def add_circle_to_map(row, col, radius, m, color, fop):
+    folium.Polygon(
+            locations = map_circle_to_pos(row, col, radius),
+            fill_color=color,
+            fill_opacity=fop
+            ).add_to(m)
+
 def visu_baseline():
     print_flush('Creating HTML for visualization of baseline algorithm')
     with get_base_output_file() as f:
@@ -54,12 +61,19 @@ def visu_initial():
 def visu_mip():
     m = create_map()
     rects = list()
+    circs = list()
     with get_mip_output_file() as f:
         for line in f.readlines():
-            rects.append([int(x) for x in line.split(' ')])
+            s = line.split(' ')
+            if s[0] == 'rectangle':
+                rects.append([int(x) for x in s[1:]])
+            elif s[0] == 'circle':
+                circs.append([int(x) for x in s[1:]])
     (offr, offc) = get_mip_shift()
     for x,y,z,t in rects:
         add_rectangles_to_map(z+offr,t+offr,x+offc,y+offc,m, 'green', 0.5)
+    for (row, col, radius) in circs:
+        add_circle_to_map(row+offr, col+offc, radius,m, 'blue', 0.5)
     m.save(os.path.join(Utils.get_html_dir(), 'mip.html'))
 
 def visu_mip_vs_baseline():
