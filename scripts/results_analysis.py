@@ -5,6 +5,7 @@ import os, sys, math
 
 from mip.select_best import run_mdl
 from mip.Utils import get_initial_mip_data, get_gurobi_output_file
+from mip.mip_column import run as run_mip
 
 from baseline.Greedy import run as run_baseline, get_data
 
@@ -24,8 +25,8 @@ params = {
    }
 mlp.rcParams.update(params)
 
-from shared.Constant import percentage_threshold, side_size, grid_size
-from shared.Utils import map_cell_to_id
+from shared.Constant import get_percentage_threshold, set_percentage_threshold , set_side_size, side_size
+from shared.Utils import parse_data
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(script_dir, '..', 'data')
@@ -41,24 +42,33 @@ def create_directories_threshold(threshold):
     safe_mkdir(tr_dir)
     safe_mkdir(os.path.join(tr_dir, 'output'))
 
+def create_directories_time(size):
+    SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+    data_directory = os.path.join(SCRIPT_DIR, '..', 'data')
+    d = os.path.join(data_directory, 'time')
+    safe_mkdir(d)
+    safe_mkdir(os.path.join(d, str(size)))
+
 def run_algos():
-    global percentage_threshold
-    threshold_range = range(1,31)
+    threshold_range = range(5,31)
     for tr in threshold_range:
-        percentage_threshold = tr
-        create_directories_threshold(percentage_threshold)
-        run_mdl()
+        print("Threshold percentage : {}".format(str(tr)))
+        set_percentage_threshold(tr)
+        create_directories_threshold(get_percentage_threshold())
+        run_mip()
+        run_mip(use_circle=True)
         run_baseline()
 
-def get_nb_dense_for_tr(filepath):
-    total_number_dense = 0
-    with open(filepath, 'r') as f:
-        initial_mip_data = [[int(x) for x in line.split("\t")] for line in f.read().split("\n") if line != ""]
-        for row in range(len(initial_mip_data)):
-            for col in range(len(initial_mip_data[row])):
-                if initial_mip_data[row][col] == 1:
-                    total_number_dense += 1
-    return total_number_dense
+def time_analysis():
+    for size in [100, 150, 200]:
+        for tr in [5,2]:
+            create_directories_time(size)
+            create_directories_threshold(tr)
+            set_side_size(size)
+            set_percentage_threshold(tr)
+            parse_data()
+            run_mip(use_circle=True)
+            run_baseline()
 
 def plot_graph_threshold_error():
     threshold_range = range(5,31)

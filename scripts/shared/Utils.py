@@ -17,7 +17,7 @@ def print_flush(message):
 # Fluxs matrices representing the data
 
 def map_cell_to_id(row,col):
-    return row*side_size + col
+    return row*side_size() + col
 
 def map_id_to_cell(cell_id):
     return (cell_id/width, cell_id % width)
@@ -25,8 +25,8 @@ def map_id_to_cell(cell_id):
 def map_pos_to_node(pos):
     longitude = pos[0]
     latitude = pos[1]
-    col = int((longitude-min_longitude)/ratio_longitude) if longitude != max_longitude else side_size - 1
-    row = int((latitude-min_latitude)/ratio_latitude) if latitude != max_latitude else side_size - 1
+    col = int((longitude-min_longitude)/ratio_longitude()) if longitude != max_longitude else side_size() - 1
+    row = int((latitude-min_latitude)/ratio_latitude()) if latitude != max_latitude else side_size() - 1
     return map_cell_to_id(row, col)
 
 def get_long_lat_from_str(string_rep):
@@ -38,7 +38,7 @@ def get_long_lat_from_str(string_rep):
 def parse_data():
     """Parse the file and populate the flux matrix and inFlux vector"""
     global inFlux
-    inFlux = [0 for i in range(grid_size)] # Influx of each cells of the grid
+    inFlux = [0 for i in range(grid_size())] # Influx of each cells of the grid
     with open(os.path.join(SCRIPT_DIR, '..', '..', 'data', 'parsed', 'KaggleTaxis.in'), 'r') as f:
         for trajectory in f.readlines():
             positions = [get_long_lat_from_str(x) for x in trajectory.split(' ') if x != '\n']
@@ -59,16 +59,16 @@ def get_inFlux():
 def get_initial_matrix():
     if inFlux is None:
         parse_data()
-    return [[inFlux[map_cell_to_id(row, col)] for col in range(side_size)] for row in range(side_size)]
+    return [[inFlux[map_cell_to_id(row, col)] for col in range(side_size())] for row in range(side_size())]
 
 # Utilities for the webapp
 def map_rectangles_to_pos(minRow, maxRow, minCol, maxCol):
     # minRow -> lower latitude
     # minCol -> lower longitude
-    minLat = min_latitude + minRow*ratio_latitude
-    maxLat = min_latitude + (maxRow+1)*ratio_latitude
-    maxLong = min_longitude + minCol*ratio_longitude
-    minLong = min_longitude +(maxCol+1)*ratio_longitude
+    minLat = min_latitude + minRow*ratio_latitude()
+    maxLat = min_latitude + (maxRow+1)*ratio_latitude()
+    maxLong = min_longitude + minCol*ratio_longitude()
+    minLong = min_longitude +(maxCol+1)*ratio_longitude()
     return (minLat, maxLat, minLong, maxLong)
 
 def map_cell_to_lat_long(row, col):
@@ -85,48 +85,48 @@ def map_circle_to_pos(row, col, radius):
     current_pos = (upLat1, upLong1)
     for _ in range(radius):
         # go one below, then one right
-        next_pos = (current_pos[0] - ratio_latitude, current_pos[1])
+        next_pos = (current_pos[0] - ratio_latitude(), current_pos[1])
         lgn_lat.append(next_pos)
-        next_pos = (next_pos[0], next_pos[1]+ratio_longitude)
+        next_pos = (next_pos[0], next_pos[1]+ratio_longitude())
         lgn_lat.append(next_pos)
         current_pos = next_pos
 
     #adding right border
-    current_pos = (current_pos[0] - ratio_latitude, current_pos[1])
+    current_pos = (current_pos[0] - ratio_latitude(), current_pos[1])
     lgn_lat.append(current_pos)
 
     #from right to bottom
     for _ in range(radius):
         #go one left then one bottom
-        next_pos = (current_pos[0], current_pos[1] - ratio_longitude)
+        next_pos = (current_pos[0], current_pos[1] - ratio_longitude())
         lgn_lat.append(next_pos)
-        next_pos = (next_pos[0] - ratio_latitude, next_pos[1])
+        next_pos = (next_pos[0] - ratio_latitude(), next_pos[1])
         lgn_lat.append(next_pos)
         current_pos = next_pos
 
     # addign bottom border
-    current_pos = (current_pos[0], current_pos[1] - ratio_longitude)
+    current_pos = (current_pos[0], current_pos[1] - ratio_longitude())
     lgn_lat.append(current_pos)
     
     #from bottom to left
     for _ in range(radius):
         # go one up then one left
-        next_pos = (current_pos[0] + ratio_latitude, current_pos[1])
+        next_pos = (current_pos[0] + ratio_latitude(), current_pos[1])
         lgn_lat.append(next_pos)
-        next_pos = (next_pos[0], next_pos[1] - ratio_longitude)
+        next_pos = (next_pos[0], next_pos[1] - ratio_longitude())
         lgn_lat.append(next_pos)
         current_pos = next_pos
 
     # left border
-    current_pos = (current_pos[0] + ratio_latitude, current_pos[1])
+    current_pos = (current_pos[0] + ratio_latitude(), current_pos[1])
     lgn_lat.append(current_pos)
     
     # left to up
     for _ in range(radius):
         # one right then one up
-        next_pos = (current_pos[0], current_pos[1]+ratio_longitude)
+        next_pos = (current_pos[0], current_pos[1]+ratio_longitude())
         lgn_lat.append(next_pos)
-        next_pos = (next_pos[0] + ratio_latitude, next_pos[1])
+        next_pos = (next_pos[0] + ratio_latitude(), next_pos[1])
         lgn_lat.append(next_pos)
         current_pos = next_pos
 
