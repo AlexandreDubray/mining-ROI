@@ -3,10 +3,12 @@
 
 import sys
 import os
+import time
 
 from mip import Utils
 
 def run_mdl():
+    start_time = time.time()
     (_, N) = Utils.get_initial_mip_data()
     
     with Utils.get_gurobi_output_file() as f:
@@ -30,12 +32,12 @@ def run_mdl():
                     (x,y,z,t, dense, nondense) = [int(x) for x in roi[1:]]
                     covered += dense
                     errored += nondense
-                    curr_rect.append((x,y,z,t))
+                    curr_rect.append((x,y,z,t, dense, nondense))
                 elif roi[0] == 'circle':
                     (row, col, radius, dense, nondense) = [int(x) for x in roi[1:]]
                     covered += dense
                     errored += nondense
-                    curr_circ.append((row, col, radius))
+                    curr_circ.append((row, col, radius, dense, nondense))
                 else:
                     print("Unknown roi type {}".format(roi[0]))
                     sys.exit(1)
@@ -47,6 +49,9 @@ def run_mdl():
                 rects = [x for x in curr_rect]
                 circles = [x for x in curr_circ]
         
+        end_time = time.time()
+        with open(Utils.mip_time_file(), 'w') as f:
+            f.write('{}'.format(end_time - start_time))
         with open(Utils.mip_output_file(), 'w') as f:
             for rect in rects:
                 f.write('rectangle {}\n'.format(' '.join([str(x) for x in rect])))

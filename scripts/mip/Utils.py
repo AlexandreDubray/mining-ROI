@@ -16,8 +16,14 @@ def get_data_directory():
 def mip_output_file():
     return os.path.join(get_data_directory(), 'output', 'mip.out')
 
+def mip_no_circle_output_file():
+    return os.path.join(get_data_directory(), 'output', 'mip-no-circle.out')
+
 def mip_gurobi_output_file():
     return os.path.join(get_data_directory(), 'gurobi.out')
+
+def mip_time_file():
+    return os.path.join(get_data_directory(), '..', 'time', str(side_size()), 'mip.out')
 
 def mip_rectangles_file():
     return os.path.join(get_data_directory(), 'mip-rectangles.in')
@@ -33,6 +39,8 @@ from mip import select_best
 
 def get_mip_matrix_file():
     try:
+        # TODO: delete after time analysis
+        write_mip_matrix()
         return open(mip_matrix_file(), 'r')
     except FileNotFoundError:
         write_mip_matrix()
@@ -42,14 +50,14 @@ def get_mip_rectangles_file():
     try:
         return open(mip_rectangles_file(), 'r')
     except FileNotFoundError:
-        mip_column.create_rectangles()
+        mip_column.create_and_store_rectangles()
         return open(mip_rectangles_file(), 'r')
 
 def get_mip_circles_file():
     try:
         return open(mip_circles_file(), 'r')
     except FileNotFoundError:
-        mip_column.create_circles()
+        mip_column.create_and_store_circles()
         return open(mip_circles_file(), 'r')
 
 def get_mip_output_file():
@@ -65,11 +73,19 @@ def get_gurobi_output_file():
         return open(mip_gurobi_output_file(), 'r')
     except FileNotFoundError:
         mip_column.run()
+        select_best.run_mdl()
         return open(mip_gurobi_output_file(), 'r')
+
+def get_mip_time_file():
+    try:
+        return open(mip_time_file(), 'r')
+    except FileNotFoundError:
+        mip_column.run()
+        return open(mip_time_file(), 'r')
 
 def write_mip_matrix():
     influx = get_inFlux()
-    mip_matrix = [ [1 if influx[map_cell_to_id(i,j)] > threshold() else 0 for j in range(side_size)] for i in range(side_size)]
+    mip_matrix = [ [1 if influx[map_cell_to_id(i,j)] > threshold() else 0 for j in range(side_size())] for i in range(side_size())]
     with open(os.path.join(get_data_directory(), 'mip-matrix.tsv'), 'w') as f:
         for row in range(len(mip_matrix)):
             f.write('{}\n'.format('\t'.join([str(x) for x in mip_matrix[row]])))

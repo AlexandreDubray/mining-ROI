@@ -3,7 +3,7 @@
 
 import os
 from shared.Utils import print_flush, get_inFlux
-from shared.Constant import get_percentage_threshold
+from shared.Constant import get_percentage_threshold, side_size
 
 from baseline import Greedy
 
@@ -18,8 +18,13 @@ def baseline_output_file():
 def baseline_matrix_file():
     return os.path.join(get_data_directory(), 'baseline-matrix.tsv')
 
+def baseline_time_file():
+    return os.path.join(get_data_directory(), '..', 'time', str(side_size()), 'baseline.out')
+
 def get_matrix_file():
     try:
+        # TODO: delete after
+        write_baseline_matrix()
         return open(baseline_matrix_file(), 'r')
     except FileNotFoundError:
         write_baseline_matrix()
@@ -27,14 +32,18 @@ def get_matrix_file():
 
 
 def get_output_file():
-    print_flush('Getting the output of the baseline algorithm')
     try:
         return open(baseline_output_file(), 'r')
     except FileNotFoundError:
-        print_flush('Output of baseline algorithm not found. Running the algorithm')
         Greedy.run()
-        print_flush('Baseline runned.')
         return open(baseline_output_file(), 'r')
+
+def get_baseline_time_file():
+    try:
+        return open(baseline_time_file(), 'r')
+    except FileNotFoundError:
+        Greedy.run()
+        return open(baseline_time_file(), 'r')
 
 def write_baseline_matrix():
     influx = get_inFlux()
