@@ -7,14 +7,20 @@ import shutil
 
 from visualization.visu_map import generate_all_visu
 
-from mip.Utils import get_mip_output_filenames
+from mip.Utils import get_mip_output_filenames, get_mip_data
 from mip.mip_column import run
+from mip.RandomSample import run_comparison as run_random_sample
+
+from mip.candidate_generation.rectangles_comparaison import run_comparaison, run_generation
+from mip.candidate_generation.dense_cell_analysis import run_analysis
+from mip.candidate_generation.MonteCarlo import run
+
 from baseline.Utils import get_baseline_output_filenames
 
 import shared.Constant
+from shared.Constant import set_percentage_threshold, set_side_size
 from shared.Utils import parse_data
 
-from results_analysis import run_analysis, time_analysis
 from synthetic_exp import run_synthetic_experiment, matrix_fifteen, runtime_mip, runtime_baseline
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -60,6 +66,12 @@ def clean():
             pass
 
 def main():
+    #run_generation()
+    #run_comparaison()
+    #run_analysis()
+    #run()
+    data = get_mip_data()
+    run_random_sample(data)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Find ROI using MIP and baseline approach')
@@ -67,5 +79,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.clean:
         clean()
-    create_env()
+    #create_env()
     main()
