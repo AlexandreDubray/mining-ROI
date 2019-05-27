@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import time
 from mip.candidate_generation.Utils import *
 
 naive_considered = 0
-def generate_center_one_cell_naive(matrix, selected):
+def generate_center_one_cell_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix):
     global naive_considered
     nRow = len(matrix)
     nCol = len(matrix[0])
@@ -18,12 +17,13 @@ def generate_center_one_cell_naive(matrix, selected):
             for height in range(maxHeight+1):
                 for width in range(maxWidth+1):
                     naive_considered += 1
-                    rect = (row-height, row+height, col-width, col+width)
-                    w = weight_rectangle(rect)
+                    rect = (row-height, col-width, row+height, col+width)
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_two_cell_horizontal_naive(matrix, selected):
+def generate_center_two_cell_horizontal_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix):
     global naive_considered
     nRow = len(matrix)
     nCol = len(matrix[0])
@@ -37,12 +37,13 @@ def generate_center_two_cell_horizontal_naive(matrix, selected):
             for height in range(maxHeight+1):
                 for width in range(maxWidth+1):
                     naive_considered += 1
-                    rect = (row-height, row+height, col-width, (col+1)+width)
-                    w = weight_rectangle(rect)
+                    rect = (row-height, col-width, row+height, (col+1)+width)
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_two_cell_vertical_naive(matrix, selected):
+def generate_center_two_cell_vertical_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix):
     global naive_considered
     nRow = len(matrix)
     nCol = len(matrix[0])
@@ -56,12 +57,13 @@ def generate_center_two_cell_vertical_naive(matrix, selected):
             for height in range(maxHeight+1):
                 for width in range(maxWidth+1):
                     naive_considered += 1
-                    rect = (row-height, (row+1)+height, col-width, col+width)
-                    w = weight_rectangle(rect)
+                    rect = (row-height, col-width, (row+1)+height, col+width)
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_four_cell_naive(matrix, selected):
+def generate_center_four_cell_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix):
     global naive_considered
     nRow = len(matrix)
     nCol = len(matrix[0])
@@ -75,19 +77,18 @@ def generate_center_four_cell_naive(matrix, selected):
             for height in range(maxHeight+1):
                 for width in range(maxWidth+1):
                     naive_considered += 1
-                    rect = (row-height, (row+1)+height, col-width, (col+1)+width)
-                    w = weight_rectangle(rect)
+                    rect = (row-height, col-width, (row+1)+height, (col+1)+width)
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_rectangles(matrix):
+def generate_rectangles(matrix, sum_entry_matrix, map_candidates_to_weight):
     global naive_considered
     naive_considered = 0
-    st = time.time()
-    selected = set()
-    generate_center_one_cell_naive(matrix, selected)
-    generate_center_two_cell_horizontal_naive(matrix, selected)
-    generate_center_two_cell_vertical_naive(matrix, selected)
-    generate_center_four_cell_naive(matrix, selected)
-    naive_time = time.time() - st
-    return (selected, naive_considered, naive_time)
+    selected = list()
+    generate_center_one_cell_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix)
+    generate_center_two_cell_horizontal_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix)
+    generate_center_two_cell_vertical_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix)
+    generate_center_four_cell_naive(matrix, selected, map_candidates_to_weight, sum_entry_matrix)
+    return selected

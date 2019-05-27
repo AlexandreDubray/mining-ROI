@@ -16,7 +16,7 @@ def ratio_longitude():
     return delta_longitude/side_size()
 
 ntrajectories = 1674151
-percentage_threshold = 5
+percentage_threshold = 30
 
 def get_percentage_threshold():
     return percentage_threshold

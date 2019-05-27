@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import mip
-
 def print_rect(data, rect):
-    for r in range(rect[0], rect[1]+1):
-        print(' '.join([str(x) for x in data[r][rect[2]:(rect[3]+1)]]))
+    (min_row, min_col, max_row,max_col) = rect
+    for r in range(min_row, max_row+1):
+        print(' '.join([str(x) for x in data[r][min_col:(max_col+1)]]))
 
 # Small utility function to more readable large number
 def print_number(number):
@@ -18,90 +17,68 @@ def split_number(number):
 def split_int(number):
     return split_number(str(number))
 
-sum_entry_matrix = None
-def create_sum_entry_matrix():
-    global sum_entry_matrix
-    mip_data = mip.Utils.get_mip_data()
-    sum_entry_matrix = [[0 for _ in range(len(mip_data[0]))] for _ in range(len(mip_data))]
-    for row in range(len(mip_data)):
-        for col in range(len(mip_data[row])):
-            if row == 0:
-                if col == 0:
-                    sum_entry_matrix[row][col] = mip_data[row][col]
-                else:
-                    sum_entry_matrix[row][col] = mip_data[row][col] + sum_entry_matrix[row][col-1]
+def get_dense_cells_rectangle(rectangle, sum_entry_matrix):
+    (min_row, min_col, max_row, max_col) = rectangle
+    if max_row == len(sum_entry_matrix)-1:
+        if min_col == 0:
+            if min_row == 0:
+                return sum_entry_matrix[max_row][max_col]
             else:
-                if col == 0:
-                    sum_entry_matrix[row][col] = mip_data[row][col] + sum_entry_matrix[row-1][col]
-                else:
-                    sum_entry_matrix[row][col] = mip_data[row][col] + sum_entry_matrix[row-1][col] + sum_entry_matrix[row][col-1] - sum_entry_matrix[row-1][col-1]
-
-def get_sum_entry_matrix():
-    if sum_entry_matrix is None:
-        create_sum_entry_matrix()
-    return sum_entry_matrix
-
-def reset_sum_entry_matrix():
-    global sum_entry_matrix
-    create_sum_entry_matrix()
-
-
-def get_actives_cells_rectangle(rmin, rmax, cmin, cmax):
-    sum_entry_matrix = get_sum_entry_matrix()
-    if rmax == len(sum_entry_matrix)-1:
-        if cmin == 0:
-            if rmin == 0:
-                return sum_entry_matrix[rmax][cmax]
-            else:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmin-1][cmax]
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[min_row-1][max_col]
         else:
-            if rmin == 0:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmax][cmin-1]
+            if min_row == 0:
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[max_row][min_col-1]
             else:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmax][cmin-1] - sum_entry_matrix[rmin-1][cmax] + sum_entry_matrix[rmin-1][cmin-1]
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[max_row][min_col-1] - sum_entry_matrix[min_row-1][max_col] + sum_entry_matrix[min_row-1][min_col-1]
     else:
-        if cmin == 0:
-            if rmin == 0:
-                return sum_entry_matrix[rmax][cmax]
+        if min_col == 0:
+            if min_row == 0:
+                return sum_entry_matrix[max_row][max_col]
             else:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmin-1][cmax]
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[min_row-1][max_col]
         else:
-            if rmin == 0:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmax][cmin-1]
+            if min_row == 0:
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[max_row][min_col-1]
             else:
-                return sum_entry_matrix[rmax][cmax] - sum_entry_matrix[rmax][cmin-1] - sum_entry_matrix[rmin-1][cmax] + sum_entry_matrix[rmin-1][cmin-1]
+                return sum_entry_matrix[max_row][max_col] - sum_entry_matrix[max_row][min_col-1] - sum_entry_matrix[min_row-1][max_col] + sum_entry_matrix[min_row-1][min_col-1]
 
-def weight_rectangle(rectangle):
-    assert(rectangle[0] <= rectangle[1])
-    assert(rectangle[2] <= rectangle[3])
-    # Uncomment for "balanced" rectangles"
-    #if rmax - rmin + 1 > 2*(cmax - cmin + 1) or cmax - cmin + 1 > 2*(rmax - rmin + 1):
-    #    return None
-    actives = get_actives_cells_rectangle(rectangle[0], rectangle[1], rectangle[2], rectangle[3])
-    unactives = (rectangle[1]-rectangle[0]+1)*(rectangle[3]-rectangle[2]+1) - actives
-    if actives <= unactives:
+def no_dense_cell(rectangle, sum_entry_matrix):
+    return get_dense_cells_rectangle(rectangle, sum_entry_matrix) == 0
+
+def number_cell_in_rectangle(rectangle):
+    (min_row, min_col, max_row,max_col) = rectangle
+    return (max_row-min_row+1)*(max_col-min_col+1)
+
+def weight_rectangle(rectangle, sum_entry_matrix):
+    assert(rectangle[0] <= rectangle[2])
+    assert(rectangle[1] <= rectangle[3])
+    dense = get_dense_cells_rectangle(rectangle, sum_entry_matrix)
+    non_dense = number_cell_in_rectangle(rectangle) - dense
+    if 4+2*dense <= 2*non_dense or dense <= non_dense:
+        # Such rectangle are not usefull w.r.t. the MDL criterion
         return None
-    return (actives, unactives)
+    return (dense, non_dense)
 
-def neighbors(row, col, matrix):
-    if row == 0:
-        if col == 0:
-            return [(row, col+1), (row+1, col)]
-        elif col == len(matrix)-1:
-            return [(row, col-1), (row+1, col)]
-        else:
-            return [(row, col-1), (row, col+1), (row+1, col)]
-    elif row == len(matrix)-1:
-        if col == 0:
-            return [(row-1, col),(row, col+1)]
-        elif col == len(matrix)-1:
-            return [(row-1, col),(row, col-1)]
-        else:
-            return [(row, col-1), (row, col+1), (row-1, col)]
-    else:
-        if col == 0:
-            return [(row+1, col), (row-1, col), (row,col+1)]
-        elif col == len(matrix)-1:
-            return [(row+1, col), (row-1, col), (row, col-1)]
-        else:
-            return [(row+1, col), (row-1, col), (row, col+1), (row, col-1)]
+def compute_upper_bound(row, col, nRows, nCols, sum_entry_matrix):
+    max_height = min(row, nRows - 1 - row)
+    max_width = min(col, nCols - 1 - col)
+
+    reduced = True
+    while reduced and max_height > 0:
+        reduced = False
+        upper_rect = (row+max_height, col-max_width, row+max_height, col+max_width)
+        lower_rect = (row-max_height, col-max_width, row-max_height, col+max_width)
+        if no_dense_cell(upper_rect, sum_entry_matrix) or no_dense_cell(lower_rect, sum_entry_matrix):
+            max_height -= 1
+            reduced = True
+
+    reduced = True
+    while reduced and max_width > 0:
+        left_rect = (row-max_height, col-max_width, row+max_height, col-max_width)
+        right_rect = (row-max_height, col+max_width, row+max_height, col+max_width)
+        reduced = False
+        if no_dense_cell(left_rect, sum_entry_matrix) or no_dense_cell(right_rect, sum_entry_matrix):
+            max_width -= 1
+            reduced = True
+
+    return (max_height, max_width)

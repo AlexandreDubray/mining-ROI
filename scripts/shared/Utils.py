@@ -10,6 +10,9 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 inFlux = None
 
+def get_data_directory():
+    return os.path.join(SCRIPT_DIR, '..', '..', 'data', str(get_percentage_threshold()))
+
 def print_flush(message):
     print(message)
     sys.stdout.flush()
@@ -17,7 +20,8 @@ def print_flush(message):
 # Fluxs matrices representing the data
 
 def map_cell_to_id(row,col):
-    return row*side_size() + col
+    i = row*side_size() + col
+    return i
 
 def map_id_to_cell(cell_id):
     return (cell_id/width, cell_id % width)
@@ -55,6 +59,10 @@ def get_inFlux():
     if inFlux is None:
         parse_data()
     return inFlux
+
+def reset_influx():
+    global inFlux
+    inFlux = None
 
 def get_initial_matrix():
     if inFlux is None:

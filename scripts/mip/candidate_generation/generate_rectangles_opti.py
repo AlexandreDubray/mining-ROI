@@ -1,68 +1,28 @@
 # -*- coding: utf-8 -*-
 
-import time
+import sys
 from mip.candidate_generation.Utils import *
 
-def min_rect_size(matrix):
-    nRows = len(matrix)
-    nCols = len(matrix[0])
-    row_dist = [0 for _ in range(nRows)]
-    col_dist = [0 for _ in range(nCols)]
+def compute_lower_bound(row, col, upper_bound, sum_entry_matrix):
+    (max_height, max_width) = upper_bound[row][col]
+    (min_height, min_width) = (0,0)
+    for delta_row in range(max_height+1):
+        upper_rect = (row+delta_row, col-max_width, row+delta_row, col+max_width)
+        lower_rect = (row-delta_row, col-max_width, row-delta_row, col+max_width)
+        if no_dense_cell(upper_rect, sum_entry_matrix) and no_dense_cell(lower_rect, sum_entry_matrix):
+            min_height += 1
+        else:
+            break
+    for delta_col in range(max_width+1):
+        left_rect = (row-max_height, col-delta_col, row+max_height, col-delta_col)
+        right_rect = (row-max_height, col+delta_col, row+max_height, col+delta_col)
+        if no_dense_cell(left_rect, sum_entry_matrix) and no_dense_cell(right_rect, sum_entry_matrix):
+            min_width += 1
+        else:
+            break
+    return (min_height, min_width)
 
-    for row in range(nRows):
-        for delta_row in range(min(row, nRows-row-1)):
-            uRow = row + delta_row
-            if uRow < nRows:
-                if get_actives_cells_rectangle(uRow,uRow,0,nCols-1) > 0:
-                    row_dist[row] = delta_row
-                    break
-            lRow = row - delta_row
-            if lRow > 0:
-                if get_actives_cells_rectangle(lRow,lRow,0,nCols-1) > 0:
-                    row_dist[row] = delta_row
-                    break
-
-    for col in range(nCols):
-        for delta_col in range(min(col, nCols - col - 1)):
-            uCol = col + delta_col
-            if uCol < nCols:
-                if get_actives_cells_rectangle(0, nRows-1, uCol, uCol) > 0:
-                    col_dist[col] = delta_col
-                    break
-
-            lCol = col - delta_col
-            if lCol > 0:
-                if get_actives_cells_rectangle(0, nRows-1, lCol, lCol) > 0:
-                    col_dist[col] = delta_col
-                    break
-    return (row_dist, col_dist)
-
-def compute_upper_bound(row, col, nRows, nCols):
-    maxHeight = min(row, nRows - 1 - row)
-    maxWidth = min(col, nCols - 1 - col)
-
-    activeCellsUpperRow = get_actives_cells_rectangle(row+maxHeight, row+maxHeight, col - maxWidth, col+maxWidth)
-    activeCellsLowerRow = get_actives_cells_rectangle(row-maxHeight, row-maxHeight, col - maxWidth, col+maxWidth)
-    canReduce = (activeCellsUpperRow == 0 or activeCellsLowerRow == 0) and maxHeight > 0
-    while canReduce:
-        maxHeight -= 1
-        activeCellsUpperRow = get_actives_cells_rectangle(row+maxHeight, row+maxHeight, col - maxWidth, col+maxWidth)
-        activeCellsLowerRow = get_actives_cells_rectangle(row-maxHeight, row-maxHeight, col - maxWidth, col+maxWidth)
-        canReduce = (activeCellsUpperRow == 0 or activeCellsLowerRow == 0) and maxHeight > 0
-
-    activeCellRightCol = get_actives_cells_rectangle(row-maxHeight, row+maxHeight, col+maxWidth, col+maxWidth)
-    activeCellLeftCol = get_actives_cells_rectangle(row-maxHeight, row+maxHeight, col-maxWidth, col-maxWidth)
-    canReduce = (activeCellRightCol == 0 or activeCellLeftCol == 0) and maxWidth > 0
-
-    while canReduce:
-        maxWidth -= 1
-        activeCellRightCol = get_actives_cells_rectangle(row-maxHeight, row+maxHeight, col+maxWidth, col+maxWidth)
-        activeCellLeftCol = get_actives_cells_rectangle(row-maxHeight, row+maxHeight, col-maxWidth, col-maxWidth)
-        canReduce = (activeCellRightCol == 0 or activeCellLeftCol == 0) and maxWidth > 0
-
-    return (maxHeight, maxWidth)
-
-def max_rect_size(matrix):
+def min_rect_size(matrix, upper_bound, sum_entry_matrix):
     nRows = len(matrix)
     nCols = len(matrix[0])
 
@@ -70,171 +30,179 @@ def max_rect_size(matrix):
     for row in range(nRows):
         dist_matrix.append([])
         for col in range(nCols):
-            dist_matrix[row].append(compute_upper_bound(row, col, nRows, nCols))
+            dist_matrix[row].append(compute_lower_bound(row, col, upper_bound, sum_entry_matrix))
     return dist_matrix
 
-opti_considered = 0
-def generate_center_one_cell(matrix, min_row_dist, min_col_dist, max_dist, selected):
-    global opti_considered 
+def max_rect_size(matrix, sum_entry_matrix):
+    nRows = len(matrix)
+    nCols = len(matrix[0])
+
+    dist_matrix = []
+    for row in range(nRows):
+        dist_matrix.append([])
+        for col in range(nCols):
+            dist_matrix[row].append(compute_upper_bound(row, col, nRows, nCols, sum_entry_matrix))
+    return dist_matrix
+
+def generate_center_one_cell(matrix, min_dist, max_dist, selected, sum_entry_matrix, map_candidates_to_weight):
     nRow = len(matrix)
     nCol = len(matrix[0])
     
     for row in range(nRow):
         for col in range(nCol):
 
-            (minHeight, minWidth) = (min_row_dist[row], min_col_dist[col])
-            (maxHeight, maxWidth) = max_dist[row][col]
+            (min_height, min_width) = min_dist[row][col]
+            (max_height, max_width) = max_dist[row][col]
 
-            for height in range(minHeight, maxHeight+1):
-                for width in range(minHeight, maxWidth+1):
-                    opti_considered += 1
-                    rect = (row-height, row+height, col-width, col+width)
+            for height in range(min_height, max_height+1):
+                for width in range(min_width, max_width+1):
+                    rect = (row-height, col-width, row+height, col+width)
 
-                    if width > minWidth and width != maxWidth:
-                        # No point in pruning the last element explored for this width
-                        cells_in_col = rect[1]-rect[0]+1
-                        ones_first_col = get_actives_cells_rectangle(row-height, row+height, col-width, col-width)
-                        ones_last_col = get_actives_cells_rectangle(row-height, row+height, col+width, col+width)
-                        zeros_first_col = cells_in_col - ones_first_col
-                        zeros_last_col = cells_in_col - ones_last_col
-                        if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
-                            break
+                    cells_in_col = rect[2]-rect[0]+1
 
-                    w = weight_rectangle(rect)
+                    first_col = (row-height, col-width, row+height, col-width)
+                    ones_first_col = get_dense_cells_rectangle(first_col, sum_entry_matrix)
+                    zeros_first_col = cells_in_col - ones_first_col
+
+                    last_col = (row-height, col+width, row+height, col+width)
+                    ones_last_col = get_dense_cells_rectangle(last_col, sum_entry_matrix)
+                    zeros_last_col = cells_in_col - ones_last_col
+
+                    if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
+                        break
+
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_two_cell_horizontal(matrix, min_row_dist, min_col_dist, max_dist, selected):
-    global opti_considered
+def generate_center_two_cell_horizontal(matrix, min_dist, max_dist, selected, sum_entry_matrix, map_candidates_to_weight):
     nRow = len(matrix)
     nCol = len(matrix[0])
     
     for row in range(nRow):
         for col in range(nCol-1):
 
-            (minHeight1, minWidth1) = (min_row_dist[row], min_col_dist[col])
-            (minHeight2, minWidth2) = (min_row_dist[row], min_col_dist[col+1])
-            (minHeight, minWidth) = (min(minHeight1, minHeight2), min(minWidth1, minWidth2))
+            (min_height1, min_width1) = min_dist[row][col]
+            (min_height2, min_width2) = min_dist[row][col+1]
+            (min_height, min_width) = (min(min_height1, min_height2), min(min_width1, min_width2))
 
-            (maxHeight1, maxWidth1) = max_dist[row][col]
-            (maxHeight2, maxWidth2) = max_dist[row][col+1]
-            minWidthToBorder = min(col, nCol - 1 - (col+1))
-            (maxHeight, maxWidth) = (max(maxHeight1, maxHeight2), min(minWidthToBorder,max(maxWidth1, maxWidth2)))
+            (max_height1, max_width1) = max_dist[row][col]
+            (max_height2, max_width2) = max_dist[row][col+1]
+            min_widthToBorder = min(col, nCol - 1 - (col+1))
+            (max_height, max_width) = (max(max_height1, max_height2), min(min_widthToBorder,max(max_width1, max_width2)))
 
-            for height in range(minHeight, maxHeight+1):
-                for width in range(minWidth, maxWidth+1):
-                    opti_considered += 1
-                    rect = (row-height, row+height, col-width, col+1+width)
+            for height in range(min_height, max_height+1):
+                for width in range(min_width, max_width+1):
+                    rect = (row-height, col-width, row+height, (col+1)+width)
 
-                    if width > minWidth and width != maxWidth:
-                        # No point in pruning the last element explored for this width
-                        cells_in_col = rect[1]-rect[0]+1
-                        ones_first_col = get_actives_cells_rectangle(row-height, row+height, col-width, col-width)
-                        ones_last_col = get_actives_cells_rectangle(row-height, row+height, col+1+width, col+1+width)
-                        zeros_first_col = cells_in_col - ones_first_col
-                        zeros_last_col = cells_in_col - ones_last_col
-                        if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
-                            break
+                    cells_in_col = rect[2]-rect[0]+1
 
-                    w = weight_rectangle(rect)
+                    first_col = (row-height, col-width, row+height, col-width)
+                    ones_first_col = get_dense_cells_rectangle(first_col, sum_entry_matrix)
+                    zeros_first_col = cells_in_col - ones_first_col
+
+                    last_col = (row-height, (col+1)+width, row+height, (col+1)+width)
+                    ones_last_col = get_dense_cells_rectangle(last_col, sum_entry_matrix)
+                    zeros_last_col = cells_in_col - ones_last_col
+
+                    if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
+                        break
+
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_two_cell_vertical(matrix, min_row_dist, min_col_dist, max_dist, selected):
-    global opti_considered
+def generate_center_two_cell_vertical(matrix, min_dist, max_dist, selected, sum_entry_matrix, map_candidates_to_weight):
     nRow = len(matrix)
     nCol = len(matrix[0])
     
     for row in range(nRow-1):
         for col in range(nCol):
 
-            (minHeight1, minWidth1) = (min_row_dist[row], min_col_dist[col])
-            (minHeight2, minWidth2) = (min_row_dist[row+1], min_col_dist[col])
-            (minHeight, minWidth) = (min(minHeight1, minHeight2), min(minWidth1, minWidth2))
+            (min_height1, min_width1) = min_dist[row][col]
+            (min_height2, min_width2) = min_dist[row+1][col]
+            (min_height, min_width) = (min(min_height1, min_height2), min(min_width1, min_width2))
 
-            (maxHeight1, maxWidth1) = max_dist[row][col]
-            (maxHeight2, maxWidth2) = max_dist[row+1][col]
-            minHeightToBorder = min(row, nRow-1-(row+1))
-            (maxHeight, maxWidth) = (min(minHeightToBorder, max(maxHeight1, maxHeight2)), max(maxWidth1, maxWidth2))
+            (max_height1, max_width1) = max_dist[row][col]
+            (max_height2, max_width2) = max_dist[row+1][col]
+            min_heightToBorder = min(row, nRow-1-(row+1))
+            (max_height, max_width) = (min(min_heightToBorder, max(max_height1, max_height2)), max(max_width1, max_width2))
 
-            for height in range(minHeight, maxHeight+1):
-                for width in range(minWidth, maxWidth+1):
-                    opti_considered += 1
-                    rect = (row-height, (row+1)+height, col-width, col+width)
 
-                    if width > minWidth and width != maxWidth:
-                        # No point in pruning the last element explored for this width
-                        cells_in_col = rect[1]-rect[0]+1
-                        ones_first_col = get_actives_cells_rectangle(row-height, row+1+height, col-width, col-width)
-                        ones_last_col = get_actives_cells_rectangle(row-height, row+1+height, col+width, col+width)
-                        zeros_first_col = cells_in_col - ones_first_col
-                        zeros_last_col = cells_in_col - ones_last_col
-                        if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
-                            break
+            for height in range(min_height, max_height+1):
+                for width in range(min_width, max_width+1):
+                    rect = (row-height, col-width, (row+1)+height, col+width)
 
-                    w = weight_rectangle(rect)
+                    cells_in_col = rect[2]-rect[0]+1
+
+                    first_col = (row-height, col-width, (row+1)+height, col-width)
+                    ones_first_col = get_dense_cells_rectangle(first_col, sum_entry_matrix)
+                    zeros_first_col = cells_in_col - ones_first_col
+
+                    last_col = (row-height, col+width, (row+1)+height, col+width)
+                    ones_last_col = get_dense_cells_rectangle(last_col, sum_entry_matrix)
+                    zeros_last_col = cells_in_col - ones_last_col
+
+                    if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
+                        break
+
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_center_four_cell(matrix, min_row_dist, min_col_dist, max_dist, selected):
-    global opti_considered
+def generate_center_four_cell(matrix, min_dist, max_dist, selected, sum_entry_matrix, map_candidates_to_weight):
     nRow = len(matrix)
     nCol = len(matrix[0])
     
     for row in range(nRow-1):
         for col in range(nCol-1):
 
-            (minHeight1, minWidth1) = (min_row_dist[row], min_col_dist[col])
-            minWidth2 =  min_col_dist[col+1]
-            minHeight3 = min_col_dist[col]
-            # minHeight1 == minHeight2 and minHeight3 == minHeight 4(same row)
-            # minWidth1 == minWidth3 and minWidth2 == minWidth4 (same col)
-            (minHeight, minWidth) = (min(minHeight1, minHeight3), min(minWidth1, minWidth2))
+            (min_height1, min_width1) = min_dist[row][col]
+            (min_height2, min_width2) = min_dist[row][col+1]
+            (min_height3, min_width3) = min_dist[row+1][col]
+            (min_height4, min_width4) = min_dist[row+1][col+1]
+            (min_height, min_width) = (min(min_height1, min_height3), min(min_width1, min_width2))
 
-            (maxHeight1, maxWidth1) = max_dist[row][col]
-            (maxHeight2, maxWidth2) = max_dist[row][col+1]
-            (maxHeight3, maxWidth3) = max_dist[row+1][col]
-            (maxHeight4, maxWidth4) = max_dist[row+1][col+1]
-            minWidthToBorder = min(col, nCol-1-(col+1))
-            minHeightToBorder = min(row, nRow-1-(row+1))
-            maxHeight = max(min(minHeightToBorder, max(maxHeight1, maxHeight2)), min(minHeightToBorder, max(maxHeight3, maxHeight4)))
-            maxWidth = max(min(minWidthToBorder, max(maxWidth1, maxWidth3)), min(minWidthToBorder, max(maxWidth2, maxWidth4)))
+            (max_height1, max_width1) = max_dist[row][col]
+            (max_height2, max_width2) = max_dist[row][col+1]
+            (max_height3, max_width3) = max_dist[row+1][col]
+            (max_height4, max_width4) = max_dist[row+1][col+1]
+            min_widthToBorder = min(col, nCol-1-(col+1))
+            min_heightToBorder = min(row, nRow-1-(row+1))
+            max_height = max(min(min_heightToBorder, max(max_height1, max_height2)), min(min_heightToBorder, max(max_height3, max_height4)))
+            max_width = max(min(min_widthToBorder, max(max_width1, max_width3)), min(min_widthToBorder, max(max_width2, max_width4)))
 
-            for height in range(minHeight, maxHeight+1):
-                for width in range(minWidth, maxWidth+1):
-                    opti_considered += 1
-                    rect = (row-height, (row+1)+height, col-width, (col+1)+width)
+            for height in range(min_height, max_height+1):
+                for width in range(min_width, max_width+1):
+                    rect = (row-height, col-width, (row+1)+height, (col+1)+width)
 
-                    if width > minWidth and width != maxWidth:
-                        # No point in pruning the last element explored for this width
-                        cells_in_col = rect[1]-rect[0]+1
-                        ones_first_col = get_actives_cells_rectangle(row-height, row+1+height, col-width, col-width)
-                        ones_last_col = get_actives_cells_rectangle(row-height, row+1+height, col+1+width, col+1+width)
-                        zeros_first_col = cells_in_col - ones_first_col
-                        zeros_last_col = cells_in_col - ones_last_col
-                        if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
-                            break
+                    cells_in_col = rect[2]-rect[0]+1
 
-                    w = weight_rectangle(rect)
+                    first_col = (row-height, col-width, (row+1)+height, col-width)
+                    ones_first_col = get_dense_cells_rectangle(first_col, sum_entry_matrix)
+                    zeros_first_col = cells_in_col - ones_first_col
+
+                    last_col = (row-height, (col+1)+width, (row+1)+height, (col+1)+width)
+                    ones_last_col = get_dense_cells_rectangle(last_col, sum_entry_matrix)
+                    zeros_last_col = cells_in_col - ones_last_col
+
+                    if 4+2*ones_first_col <= 2*zeros_first_col or 4+2*ones_last_col <= 2*zeros_last_col:
+                        break
+
+                    w = weight_rectangle(rect, sum_entry_matrix)
                     if w is not None:
-                        selected.add(rect)
+                        selected.append(rect)
+                        map_candidates_to_weight[rect] = w
 
-def generate_rectangles_opti(matrix):
-    global opti_considered
-    opti_considered = 0
-    st = time.time()
-    rect = set()
-    (min_row_dist, min_col_dist) = min_rect_size(matrix)
-    max_dist = max_rect_size(matrix)
-    generate_center_one_cell(matrix, min_row_dist, min_col_dist, max_dist, rect)
-    generate_center_two_cell_horizontal(matrix, min_row_dist, min_col_dist, max_dist, rect)
-    generate_center_two_cell_vertical(matrix, min_row_dist, min_col_dist, max_dist, rect)
-    generate_center_four_cell(matrix, min_row_dist, min_col_dist, max_dist, rect)
-    run_time = time.time() - st
-    """
-    print("Base optimisation:")
-    print("Considered :\t%s" % (split_number(str(opti_considered))))
-    print("Selected :  \t%s" % (split_number(str(len(rect)))))
-    print("Time :      \t%.2f seconds" % (run_time))
-    """
-    return (rect, opti_considered, run_time)
+def generate_rectangles_opti(matrix, sum_entry_matrix, map_candidates_to_weight):
+    rect = list()
+    max_dist = max_rect_size(matrix, sum_entry_matrix)
+    min_dist = min_rect_size(matrix, max_dist, sum_entry_matrix)
+    generate_center_one_cell(matrix, min_dist, max_dist, rect, sum_entry_matrix, map_candidates_to_weight)
+    generate_center_two_cell_horizontal(matrix, min_dist, max_dist, rect, sum_entry_matrix, map_candidates_to_weight)
+    generate_center_two_cell_vertical(matrix, min_dist, max_dist, rect, sum_entry_matrix, map_candidates_to_weight)
+    generate_center_four_cell(matrix, min_dist, max_dist, rect, sum_entry_matrix, map_candidates_to_weight)
+    return rect
