@@ -63,18 +63,20 @@ def compute_sol(data, candidates_rect, candidates_circle, map_candidates_to_weig
                 circ_opti.add(candidates_circle[v - len(candidates_rect)])
     return (rect_opti, circ_opti)
 
-def run(data,use_circle=True, synth_rect=None):
+def run(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
     st = time.time()
     sum_entry_matrix = create_sum_entry_matrix(data)
     map_candidates_to_weight = {}
     if synth_rect is None:
-        candi_rect = generate_rectangles(data, sum_entry_matrix, map_candidates_to_weight)
+        candi_rect = generate_rectangles_dense(data, sum_entry_matrix, map_candidates_to_weight)
     else:
         candi_rect = synth_rect
     if use_circle:
         candi_circ = generate_circles(data, sum_entry_matrix, map_candidates_to_weight)
     else:
         candi_circ = list()
+    if synth_map_to_weight is not None:
+        map_candidates_to_weight = synth_map_to_weight
     creation_candidate_time = time.time() - st
     st = time.time()
     sol = compute_sol(data, candi_rect, candi_circ, map_candidates_to_weight) 

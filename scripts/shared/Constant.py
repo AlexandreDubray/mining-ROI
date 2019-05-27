@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from shared import Utils
 
 # TODO: See if I can delete this
 min_latitude = 41.100542
@@ -16,14 +17,21 @@ def ratio_longitude():
     return delta_longitude/side_size()
 
 ntrajectories = 1674151
-percentage_threshold = 30
+percentage_threshold = 5
 
 def get_percentage_threshold():
     return percentage_threshold
 
 def set_percentage_threshold(tr):
     global percentage_threshold
+    Utils.reset_influx()
     percentage_threshold = tr
+
+def set_threshold(threshold):
+    global percentage_threshold, ntrajectories
+    Utils.reset_influx()
+    ntrajectories = 100
+    percentage_threshold = threshold
 
 def threshold():
     return float(get_percentage_threshold()/100)*ntrajectories
@@ -37,6 +45,7 @@ def side_size():
 
 def set_side_size(s):
     global sd 
+    Utils.reset_influx()
     sd = s
 
 def grid_size():

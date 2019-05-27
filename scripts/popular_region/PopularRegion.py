@@ -122,6 +122,9 @@ def find_roi(data):
                     (min_row, min_col, max_row, max_col) = (new_min_row, new_min_col, new_max_row, new_max_col)
                     mean_density = new_mean_density
             
+            for r in range(min_row, max_row+1):
+                for c in range(min_col, max_col+1):
+                    used[r][c] = True
             rois.add((min_row, min_col, max_row, max_col))
     return rois
 
