@@ -1,21 +1,14 @@
-#! /usr/bin/env python3
-
 from gurobipy import *
 
-import time
-
-from mip.candidate_generation.generate_rectangles_dense import generate_rectangles_dense
-from mip.candidate_generation.generate_rectangles_opti import generate_rectangles_opti
-from mip.candidate_generation.generate_rectangles import generate_rectangles
-from mip.candidate_generation.generate_circles import generate_circles
-
-from mip.Utils import create_sum_entry_matrix
+from miner.generate_rectangles import generate_rectangles
+from miner.generate_circles import generate_circles
+from miner.optimizer_utils import create_sum_entry_matrix
 
 # TODO: find a better way to pass the candidates to the function
 def compute_sol(data, candidates_rect, candidates_circle, map_candidates_to_weight):
-    m = Model("mod")
+    m = Model("model")
     # Comment here to show gurobi output
-    m.Params.OutputFlag = 0
+    # m.Params.OutputFlag = 0
 
     nCand = len(candidates_rect) + len(candidates_circle)
 
@@ -64,11 +57,10 @@ def compute_sol(data, candidates_rect, candidates_circle, map_candidates_to_weig
     return (rect_opti, circ_opti)
 
 def run(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
-    st = time.time()
     sum_entry_matrix = create_sum_entry_matrix(data)
     map_candidates_to_weight = {}
     if synth_rect is None:
-        candi_rect = generate_rectangles_dense(data, sum_entry_matrix, map_candidates_to_weight)
+        candi_rect = generate_rectangles(data, sum_entry_matrix, map_candidates_to_weight)
     else:
         candi_rect = synth_rect
     if use_circle:
@@ -77,9 +69,6 @@ def run(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
         candi_circ = list()
     if synth_map_to_weight is not None:
         map_candidates_to_weight = synth_map_to_weight
-    creation_candidate_time = time.time() - st
-    st = time.time()
     sol = compute_sol(data, candi_rect, candi_circ, map_candidates_to_weight) 
-    opti_time = time.time() - st
-    return {'rois': sol, 'time': (creation_candidate_time, opti_time)}
-
+    print(sol)
+    return sol

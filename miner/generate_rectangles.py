@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import time
-from mip.candidate_generation.Utils import *
+from miner.candidate_gen_utils import *
 
 def get_upper_bound_or_update(row, col, nRows, nCols, maps, sum_entry_matrix):
     if (row,col) not in maps:
@@ -37,9 +35,7 @@ def max_rect_size_dense(matrix, dense_cell, sum_entry_matrix):
                 cells_to_consider.add((next_row, next_col))
     return (cells_to_consider, map_cell_to_bound, min_size)
 
-opti_dense_considered = 0
 def generate_center_one_cell_dense(matrix, min_size, cell_to_consider, map_cell_to_upbound, selected, sum_entry_matrix, map_candidates_to_weight):
-    global opti_dense_considered
     nRows = len(matrix)
     nCols = len(matrix[0])
     for (row, col) in cell_to_consider:
@@ -49,7 +45,6 @@ def generate_center_one_cell_dense(matrix, min_size, cell_to_consider, map_cell_
 
         for height in range(min_height, max_height + 1):
             for width in range(min_width, max_width + 1):
-                opti_dense_considered += 1
                 rect = (row-height, col-width, row+height, col+width)
 
                 cells_in_col = rect[2]-rect[0]+1
@@ -71,7 +66,6 @@ def generate_center_one_cell_dense(matrix, min_size, cell_to_consider, map_cell_
                     map_candidates_to_weight[rect] = w
 
 def generate_center_two_cell_horizontal_dense(matrix, min_size, cell_to_consider, map_cell_to_upbound, selected, sum_entry_matrix, map_candidates_to_weight):
-    global opti_dense_considered
     nRows = len(matrix)
     nCols = len(matrix[0])
     for (row, col) in cell_to_consider:
@@ -90,7 +84,6 @@ def generate_center_two_cell_horizontal_dense(matrix, min_size, cell_to_consider
 
             for height in range(min_height, max_height + 1):
                 for width in range(min_width, max_width + 1):
-                    opti_dense_considered += 1
                     rect = (row-height, col-width, row+height, (col+1)+width)
 
                     cells_in_col = rect[2]-rect[0]+1
@@ -113,7 +106,6 @@ def generate_center_two_cell_horizontal_dense(matrix, min_size, cell_to_consider
 
 
 def generate_center_two_cell_vertical_dense(matrix, min_size, cell_to_consider, map_cell_to_upbound, selected, sum_entry_matrix, map_candidates_to_weight):
-    global opti_dense_considered
     nRows = len(matrix)
     nCols = len(matrix[0])
     for (row, col) in cell_to_consider:
@@ -131,7 +123,6 @@ def generate_center_two_cell_vertical_dense(matrix, min_size, cell_to_consider, 
 
             for height in range(min_height, max_height + 1):
                 for width in range(min_width, max_width + 1):
-                    opti_dense_considered += 1
                     rect = (row-height, col-width, (row+1)+height, col+width)
 
                     cells_in_col = rect[2]-rect[0]+1
@@ -153,7 +144,6 @@ def generate_center_two_cell_vertical_dense(matrix, min_size, cell_to_consider, 
                         map_candidates_to_weight[rect] = w
 
 def generate_center_four_cell_dense(matrix, min_size, cell_to_consider, map_cell_to_upbound, selected, sum_entry_matrix, map_candidates_to_weight):
-    global opti_dense_considered
     nRows = len(matrix)
     nCols = len(matrix[0])
     for (row, col) in cell_to_consider:
@@ -176,7 +166,6 @@ def generate_center_four_cell_dense(matrix, min_size, cell_to_consider, map_cell
 
             for height in range(min_height, max_height + 1):
                 for width in range(min_width, max_width + 1):
-                    opti_dense_considered += 1
                     rect = (row-height, col-width, (row+1)+height, (col+1)+width)
 
                     cells_in_col = rect[2]-rect[0]+1
@@ -197,12 +186,8 @@ def generate_center_four_cell_dense(matrix, min_size, cell_to_consider, map_cell
                         selected.append(rect)
                         map_candidates_to_weight[rect] = w
 
-def generate_rectangles_dense(matrix, sum_entry_matrix, map_candidates_to_weight):
-    global opti_dense_considered
-    opti_dense_considered = 0
-    st = time.time()
+def generate_rectangles(matrix, sum_entry_matrix, map_candidates_to_weight):
     dense_cells = set()
-    dense_id = 0
     for r in range(len(matrix)):
         for c in range(len(matrix[0])):
             if matrix[r][c] == 1:
@@ -215,5 +200,4 @@ def generate_rectangles_dense(matrix, sum_entry_matrix, map_candidates_to_weight
     generate_center_two_cell_vertical_dense(matrix, min_size, cell_to_see, maps, rect, sum_entry_matrix, map_candidates_to_weight)
     generate_center_four_cell_dense(matrix, min_size, cell_to_see, maps, rect, sum_entry_matrix, map_candidates_to_weight)
 
-    run_time = time.time() - st
     return rect

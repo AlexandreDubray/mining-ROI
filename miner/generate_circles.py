@@ -1,6 +1,5 @@
 # -*- coding: utf8 -*-
-
-from mip.candidate_generation.Utils import *
+from miner.candidate_gen_utils import *
 
 def compute_weight_circle(row, col, radius, sum_entry_matrix):
     dense = 0
