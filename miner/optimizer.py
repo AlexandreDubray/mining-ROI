@@ -56,7 +56,7 @@ def compute_sol(data, candidates_rect, candidates_circle, map_candidates_to_weig
                 circ_opti.add(candidates_circle[v - len(candidates_rect)])
     return (rect_opti, circ_opti)
 
-def run(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
+def optimize(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
     sum_entry_matrix = create_sum_entry_matrix(data)
     map_candidates_to_weight = {}
     if synth_rect is None:
@@ -70,5 +70,4 @@ def run(data,use_circle=True, synth_rect=None, synth_map_to_weight=None):
     if synth_map_to_weight is not None:
         map_candidates_to_weight = synth_map_to_weight
     sol = compute_sol(data, candi_rect, candi_circ, map_candidates_to_weight) 
-    print(sol)
     return sol
