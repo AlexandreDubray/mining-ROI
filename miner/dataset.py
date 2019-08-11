@@ -28,7 +28,7 @@ class Dataset:
                 if side == side_size:
                     instance = self.instances[(side,threshold)]
                     new_instance = {}
-                    for key,value in instances.items():
+                    for key,value in instance.items():
                         new_instance[key] = value
                     new_instance['threshold'] = int(new_instance['number_trajectories']*density_threshold)
                     new_instance['binary_matrix'] = [[1 if new_instance['influx'][self.__map_cell_to_idx(row, col, side_size)] >= new_instance['threshold'] else 0 for col in range(side_size)] for row in range(side_size)]
