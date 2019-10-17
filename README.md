@@ -1,32 +1,37 @@
 # mining-ROI
 
-This repository contains code to mine Regions Of Interest from trajectory data
+This repository contains code to mine Regions Of Interest from trajectory data.
 
-## Format of the data
-At the moment, the data must be formatted in the following way
-  - One trajectory per line
-  - Each trajectory is a sequence of tuple `(longitude,latitude)` separate by a space (no space after the last position in the sequence) : `(long1, lat1) (long2, lat2) ... (longN, latN)`
+## Installation
+You can clone the repository and install the package with `pip install .`
 
-## Dependencies
+## How to use
 
-To run the program, you need a valid [Gurobi](http://www.gurobi.com/) licence and the `gurobipy` python package. This project assumes Python 3.x
-  
-## How to use the program
-To run the program, use the following command line
- 
-`python Main.py path size threshold` where
-  - `path` is the path to the data set file
-  - `size` is the size of the side of the grid (for now we only work with square grid)
-  - `threshold` is the minimum density threshold (express as a percentage of the total number of trajectories)
-  
-So for example `python Main.py ./DatasetName 100 0.05` will run the algorithm on the DatasetName dataset with a grid of size 
-100 by 100 and a minimum density threshold of 5 percent.
+### The optimizer
 
-## See the results
-Suppose we run the command `python Main.py DatasetName size threshold`. To see/use the resulting ROIs you can either
-  1) Open the `.html` file in the `vizualisation` folder. Then you can add a file with the button and select in the folder
-  `datasets` (created when first launching the program) the file `DatasetName-size-threshold.json`. This will then show the 
-  ROIs on a map.
-  2) All the informations and results are also stored in a pickle file in the `datasets` folder (using the same name as in 1,
-  the file would be name `DatasetName.pkl`) which is basically the `Dataset` (file `miner/dataset.py`) python object for the particular data set (Python documentation to come).
-  
+The current optimizer will select a set of non-overlapping predefined weighted regions such that the sum
+of the return regions is minimal. The following piece of code shows how to use the optimizer
+
+```python
+from roi_miner.miner.optimizer import optimize
+
+regions = create_regions(6) # Function that create 6 regions
+weights = [3,1,2,5,10,2] # One weight per function
+overlaps = [[0,2,4],[1,2,3]] # Id of regions that are not allowed to be selected at the same time
+selected_regions = optimize(regions, weight, overlaps)
+```
+
+The regions are any possible python objects, it does not count in the optimization process.
+Each region must have a weight given that will be use to find the optimal solution (it can be positive, negative, float, etc..)
+The `overlaps` variable define which set of ROI can not be taken together. For example, if we take the region `0`, then we
+can not take the region `2` and `4` (and vice-versa).
+
+### Predefined optimization
+
+We provide pre-defined optimization/process to mine ROI. At the moment, we provide
+- `grid_miner.MDL_optimizer` that find ROI on a grid while minimizing a MDL criterion. It need as argument a density grid and a density threshold:
+```python
+from roi_miner.miner.grid_miner.MDL_optimizer import mine_rois
+
+mine_rois(density_matrix, threshold)
+```
