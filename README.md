@@ -15,7 +15,7 @@ of the return regions is minimal. The following piece of code shows how to use t
 ```python
 from roi_miner.miner.optimizer import optimize
 
-regions = create_regions(6) # Function that create 6 regions
+regions = create_regions(6) # Imaginary function that create 6 regions. You should implement this or use a predefined optimization
 weights = [3,1,2,5,10,2] # One weight per function
 overlaps = [[0,2,4],[1,2,3]] # Id of regions that are not allowed to be selected at the same time
 selected_regions = optimize(regions, weight, overlaps)
