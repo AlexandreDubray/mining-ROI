@@ -283,4 +283,5 @@ def mine_rois(density_grid, density_threshold):
     candidates = rectangles + circles
     weights = [map_weight[x] for x in candidates]
     overlaps = _create_constraints(binary_matrix, rectangles, circles)
-    return optimize(rectangles + circles, weights, overlaps)
+    regions_idx = optimize(rectangles + circles, weights, overlaps)
+    return [candidates[x] for x in regions_idx]
