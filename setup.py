@@ -6,5 +6,5 @@ setup(
     packages=['roi_miner', 'roi_miner.grid_miners', 'roi_miner.grid_miners.MDL_miner'],
     author='Dubray Alexandre',
     install_requires=['gurobipy'],
-    description='Mining Regions of Interest on trajectory data'
+    description='Mining constrained Regions of Interest on trajectory data'
 )
