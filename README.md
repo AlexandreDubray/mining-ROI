@@ -3,35 +3,56 @@
 This repository contains code to mine Regions Of Interest from trajectory data.
 
 ## Installation
+
 You can clone the repository and install the package with `pip install .`
 
 ## How to use
 
-### The optimizer
+The miner is separated in two part: the generation of the candidates and the optimizer. You can decide to use only the 
+optimizer with your set of candidates, or to use the predefined grid-based MDL miner.
 
-The current optimizer will select a set of non-overlapping predefined weighted regions such that the sum
-of the return regions is minimal. The following piece of code shows how to use the optimizer
+### Grid-based MDL miner
+
+For a full example, you can look at the file `examples/ILP-example.py`.
+
+#### Basic usage
+
+First you need to load a grid of density and set a minimum density threshold. Then you can just run
 
 ```python
-from roi_miner.miner.optimizer import optimize
+from roi_miner.grid_miners.MDL_miner.MDL_otpimizer import mine_rois
 
-regions = create_regions(6) # Imaginary function that create 6 regions. You should implement this or use a predefined optimization
-weights = [3,1,2,5,10,2] # One weight per function
-overlaps = [[0,2,4],[1,2,3]] # Id of regions that are not allowed to be selected at the same time
-selected_regions = optimize(regions, weight, overlaps)
+rois = mine_rois(grid_density, density_threshold)
 ```
 
-The regions are any possible python objects, it does not count in the optimization process.
-Each region must have a weight given that will be use to find the optimal solution (it can be positive, negative, float, etc..)
-The `overlaps` variable define which set of ROI can not be taken together. For example, if we take the region `0`, then we
-can not take the region `2` and `4` (and vice-versa).
+which return a list of `Shapes` which are the optimals ROIs.
 
-### Predefined optimization
+#### Adding constraints
 
-We provide pre-defined optimization/process to mine ROI. At the moment, we provide
-- `grid_miner.MDL_optimizer` that find ROI on a grid while minimizing a MDL criterion. It need as argument a density grid and a density threshold:
+You can add constraints on the shapes by registering a function with its arguments. At generation time, these constraints
+will be checked. So for example, if we want to add a constraint on the diameter of the `Circle`, we can do
+
 ```python
-from roi_miner.miner.grid_miner.MDL_optimizer import mine_rois
+from roi_miner.grid_miners.constraints import *
 
-mine_rois(density_matrix, threshold)
+# Some code here ...
+
+register_circle_constraint(circle_diameter_constraint, (2,5,))
 ```
+
+We provide some initial constraint in `roi_miner.grid_miners.constraints` but you can define yours.
+
+Finally, the call to `mines_rois` take two optionnal parameters `min_distance_rois` and `max_distance_rois`.
+These are distance constraints between the ROIs. We can not have two ROIs at a distance less than `min_distance_rois` and 
+more than `max_distance_rois`.
+
+
+### Only use the optimizer
+
+You can also only use the optimizer with your own candidates (or shapes). The signature of the optimization function is
+
+```python
+def optimize(candidates, weights, exclusive_constraints)
+```
+With `candidates` the set of candidates, `weights` their weights.
+`exclusive_constraints` contains a list of set of candidates index that can not be taken together.

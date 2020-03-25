@@ -45,7 +45,7 @@ def _create_constraints(matrix, candidates, min_dist, max_dist):
     return exclusive_contraints
 
 
-def mine_rois(density_grid, density_threshold, min_distance_rois=0, max_distance_roi=sys.maxsize):
+def mine_rois(density_grid, density_threshold, min_distance_rois=0, max_distance_rois=sys.maxsize):
     nrows = len(density_grid)
     ncols = len(density_grid[0])
     binary_matrix = [[1 if density_grid[row][col] >= density_threshold else 0 for col in range(ncols)] for row in range(nrows)]
@@ -56,7 +56,7 @@ def mine_rois(density_grid, density_threshold, min_distance_rois=0, max_distance
 
     candidates = rectangles + circles
     weights = [x.get_description_length() for x in candidates]
-    constraints = _create_constraints(binary_matrix, candidates, min_distance_rois, max_distance_roi)
+    constraints = _create_constraints(binary_matrix, candidates, min_distance_rois, max_distance_rois)
 
     rois = optimize(candidates, weights, constraints)
     return rois
