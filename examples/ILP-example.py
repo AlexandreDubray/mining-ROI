@@ -1,28 +1,20 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
+from roi_miner.grid_miners.MDL_miner.MDL_optimizer import mine_rois
+from roi_miner.grid_miners.constraints import *
 
-import os
-from roi_miner.miner.grid_miner.MDL_optimizer import mine_rois
+nb_trajectories = 1680000  # Roughly the number of trajectories we used in the Kaggle dataset
+threshold = 0.05*nb_trajectories
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+# We load the density matrix
+print("loading grid")
+with open('./grids/KaggleTaxis-100.in', 'r') as f:
+    density_grid = [[int(x) for x in line.rstrip().split(' ')] for line in f.readlines()]
 
-dataset = 'KaggleTaxis'
-#dataset = 'MicrosoftTaxis'
-grid_size = 100
-density_threshold = 0.05
+# We add some constraints on the regions.
+register_circle_constraint(circle_diameter_constraint, (0, 5,))
+register_rectangle_constraint(rectangle_diameter_constraint, (0, 5,))
 
+rois = mine_rois(density_grid, threshold)
 
-filename = dataset + '-' + str(grid_size) + '.in'
-with open(os.path.join(SCRIPT_DIR, 'grids', filename),'r') as f:
-    grid = list()
-    for row in f.readlines():
-        grid.append([int(x) for x in row.split(' ')])
-
-if dataset == 'KaggleTaxis':
-    threshold = 1667079*density_threshold #Number of traj in the dataset
-else:
-    # In the microsoft data set there are no trajectory
-    threshold = max([max(x) for x in grid]) #Maximum density of the grid
-
-rois = mine_rois(grid, threshold)
-print(rois)
+for roi in rois:
+    print(roi)

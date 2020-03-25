@@ -1,6 +1,7 @@
 from gurobipy import *
 
-def _compute_sol(candidates, weights, overlaps):
+
+def optimize(candidates, weights, exclusive_constraints):
     m = Model("model")
     # Comment here to show gurobi output
     m.Params.OutputFlag = 0
@@ -11,17 +12,14 @@ def _compute_sol(candidates, weights, overlaps):
 
     m.update()
 
-    for overlap_idx in overlaps:
-        m.addConstr(quicksum([cands[x] for x in overlap_idx]) <= 1)
+    for constraint in exclusive_constraints:
+        m.addConstr(quicksum([cands[x] for x in constraint]) <= 1)
 
     m.optimize()
 
-    rois_idx = list()
+    rois = list()
 
     for idx in range(nCand):
         if cands[idx].X == 1.0:
-            rois_idx.append(idx)
-    return rois_idx
-
-def optimize(regions, weights, overlaps):
-    return _compute_sol(regions, weights, overlaps)
+            rois.append(candidates[idx])
+    return rois
