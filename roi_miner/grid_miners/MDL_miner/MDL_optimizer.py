@@ -2,6 +2,8 @@
 from roi_miner.grid_miners.MDL_miner.generate_circles import generate_circles
 from roi_miner.grid_miners.MDL_miner.generate_rectangles import generate_rectangles
 
+import sys
+
 from roi_miner.optimizer import optimize
 
 
@@ -15,7 +17,7 @@ def _create_sum_area_matrix(matrix):
     return sum_area
 
 
-def _create_constraints(matrix, candidates):
+def _create_constraints(matrix, candidates, min_dist, max_dist):
     constraint_matrix = [[set() for _ in range(len(matrix[0]))] for _ in range(len(matrix))]
 
     for k, region in enumerate(candidates):
@@ -26,13 +28,24 @@ def _create_constraints(matrix, candidates):
 
     for row in range(len(constraint_matrix)):
         for col in range(len(constraint_matrix[0])):
+            # We add the distance constraints
+            if min_dist > 0 or max_dist != sys.maxsize:
+                # Useless to do this if the constraint are not to be enforced
+                for k, region in enumerate(candidates):
+                    dist = region.distance_to_cell(row, col)
+                    if min_dist > 0 and dist < min_dist:
+                        constraint_matrix[row][col].add(k)
+                    if max_dist != sys.maxsize and dist > max_dist:
+                        constraint_matrix[row][col].add(k)
+
             s = constraint_matrix[row][col]
             if len(s) > 0:
                 exclusive_contraints.append(s)
+
     return exclusive_contraints
 
 
-def mine_rois(density_grid, density_threshold):
+def mine_rois(density_grid, density_threshold, min_distance_rois=0, max_distance_roi=sys.maxsize):
     nrows = len(density_grid)
     ncols = len(density_grid[0])
     binary_matrix = [[1 if density_grid[row][col] >= density_threshold else 0 for col in range(ncols)] for row in range(nrows)]
@@ -43,7 +56,7 @@ def mine_rois(density_grid, density_threshold):
 
     candidates = rectangles + circles
     weights = [x.get_description_length() for x in candidates]
-    constraints = _create_constraints(binary_matrix, candidates)
+    constraints = _create_constraints(binary_matrix, candidates, min_distance_rois, max_distance_roi)
 
     rois = optimize(candidates, weights, constraints)
     return rois

@@ -13,8 +13,9 @@ with open('./grids/KaggleTaxis-100.in', 'r') as f:
 # We add some constraints on the regions.
 register_circle_constraint(circle_diameter_constraint, (0, 5,))
 register_rectangle_constraint(rectangle_diameter_constraint, (0, 5,))
+register_rectangle_constraint(rectangle_max_ratio_constraint, (2,))
 
-rois = mine_rois(density_grid, threshold)
+rois = mine_rois(density_grid, threshold, min_distance_rois=2)
 
 for roi in rois:
     print(roi)

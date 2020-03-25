@@ -27,6 +27,10 @@ class Rectangle(Shape):
     def get_nb_cells(self):
         return (self.max_row - self.min_row + 1) * (self.max_col - self.min_col + 1)
 
+    def distance_to_cell(self, row, col):
+        return min(abs(row - self.min_row), abs(row - self.max_row)) +\
+               min(abs(col - self.min_col), abs(col - self.max_col))
+
     def respect_constraints(self):
         for f, args in rectangle_constraints:
             if not f(self, *args):

@@ -41,6 +41,9 @@ class Circle(Shape):
         assert(int(ret) == ret)
         return int(ret)
 
+    def distance_to_cell(self, row, col):
+        return (abs(row - self.row) + abs(col - self.col)) - self.radius
+
     def respect_constraints(self):
         for f, args in circle_constraints:
             if not f(self, *args):
