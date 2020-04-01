@@ -4,6 +4,8 @@ This repository contains code to mine Regions Of Interest from trajectory data.
 
 ## Installation
 
+To run the optimization model you need the [gurobi solver](https://www.gurobi.com/) and its python package `gurobipy`.
+
 You can clone the repository and install the package with `pip install .`
 
 ## How to use
